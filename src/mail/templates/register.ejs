@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <body style="margin: 0; padding: 0; background: #f5f7fa">
+    <table
+      role="presentation"
+      cellpadding="0"
+      cellspacing="0"
+      border="0"
+      width="100%"
+      style="background: #f5f7fa; margin: 0; padding: 20px 0"
+    >
+      <tr>
+        <td align="center">
+          <table
+            role="presentation"
+            cellpadding="0"
+            cellspacing="0"
+            border="0"
+            width="640"
+            style="
+              max-width: 640px;
+              background: #ffffff;
+              border-radius: 20px;
+              overflow: hidden;
+              box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+              border: 1px solid #eaeaea;
+            "
+          >
+            <tr>
+              <td
+                align="center"
+                style="
+                  padding: 35px 30px;
+                  color: #ffffff;
+                  background: #3498db;
+                  background-image: linear-gradient(
+                    135deg,
+                    #3498db 0%,
+                    #2c3e50 100%
+                  );
+                "
+              >
+                <div>
+                  <div
+                    style="
+                      display: inline-block;
+                      margin-bottom: 20px;
+                      font-size: 36px;
+                      background: rgba(255, 255, 255, 0.2);
+                      width: 80px;
+                      height: 80px;
+                      border-radius: 50%;
+                      line-height: 80px;
+                      text-align: center;
+                    "
+                  >
+                    ✉️
+                  </div>
+                  <h1
+                    style="
+                      margin: 10px 0 8px 0;
+                      font-size: 28px;
+                      font-weight: 700;
+                      color: #ffffff;
+                    "
+                  >
+                    تأكيد بريدك الإلكتروني
+                  </h1>
+                  <p
+                    style="
+                      margin: 0;
+                      font-size: 16px;
+                      opacity: 0.9;
+                      color: #ffffff;
+                    "
+                  >
+                    مرحبًا بك في منصتنا! نحن سعداء بانضمامك إلينا
+                  </p>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Body -->
+            <tr>
+              <td
+                style="
+                  padding: 35px 30px;
+                  color: #1a202c;
+                  font-family: Tahoma, Arial, Helvetica, sans-serif;
+                  line-height: 1.6;
+                "
+              >
+                <p style="margin: 0 0 18px 0">
+                  مرحبًا! اضغط الزر التالي لتفعيل حسابك:
+                </p>
+
+                <table
+                  role="presentation"
+                  cellspacing="0"
+                  cellpadding="0"
+                  border="0"
+                  align="center"
+                  style="margin: 20px auto"
+                >
+                  <tr>
+                    <td
+                      align="center"
+                      bgcolor="#3498db"
+                      style="border-radius: 50px"
+                    >
+                      <a
+                        href="<%= confirmationURL %>"
+                        target="_blank"
+                        style="
+                          display: inline-block;
+                          background: linear-gradient(
+                            135deg,
+                            #3498db 0%,
+                            #2c3e50 100%
+                          );
+                          color: #ffffff;
+                          text-decoration: none;
+                          padding: 14px 28px;
+                          border-radius: 50px;
+                          font-weight: 700;
+                          font-size: 16px;
+                          box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+                        "
+                      >
+                        تأكيد البريد الآن
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+
+                <div
+                  style="
+                    background: #fffaf0;
+                    border-right: 4px solid #f6ad55;
+                    padding: 15px;
+                    border-radius: 8px;
+                    font-size: 14px;
+                    color: #553c02;
+                  "
+                >
+                  <strong>ملاحظة:</strong>
+                  وصلت هذه الرسالة لأن بريدك الإلكتروني استُخدم للتسجيل في <%=
+                  appName || "منصتنا" %>. إذا لم تكن أنت من قام بذلك، يمكنك
+                  تجاهل هذه الرسالة بأمان.
+                </div>
+              </td>
+            </tr>
+
+            <tr>
+              <td
+                align="center"
+                style="
+                  background: #f8f9fa;
+                  padding: 25px 30px;
+                  color: #718096;
+                  font-size: 13px;
+                  border-top: 1px solid #eaeaea;
+                  font-family: Tahoma, Arial, Helvetica, sans-serif;
+                "
+              >
+                <p style="margin: 0">
+                  © <%= new Date().getFullYear() %> <%= "منصة أ+" %>. جميع
+                  الحقوق محفوظة.
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

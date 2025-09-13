@@ -4,7 +4,8 @@ import { AuthController } from './auth.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { JwtModule } from '@nestjs/jwt';
-import { UserSchema } from 'src/schemas/users.schema';
+import { UserSchema } from '../schemas/users.schema';
+import { MailModule } from '../mail/mail.module';
 
 @Module({
   controllers: [AuthController],
@@ -24,6 +25,7 @@ import { UserSchema } from 'src/schemas/users.schema';
         };
       },
     }),
+    MailModule,
   ],
 })
 export class AuthModule {}
