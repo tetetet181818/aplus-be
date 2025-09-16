@@ -1,18 +1,18 @@
 import { Module } from '@nestjs/common';
-import { NotesService } from './notes.service';
-import { NotesController } from './notes.controller';
+import { SalesService } from './sales.service';
+import { SalesController } from './sales.controller';
+import { MailModule } from '../mail/mail.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
-import { MailModule } from '../mail/mail.module';
-import { NoteSchema } from '../schemas/note.schema';
 import { JwtModule } from '@nestjs/jwt';
+import { SalesSchema } from '../schemas/sales.schema';
 
 @Module({
-  controllers: [NotesController],
-  providers: [NotesService],
+  controllers: [SalesController],
+  providers: [SalesService],
   imports: [
     ConfigModule,
-    MongooseModule.forFeature([{ name: 'Note', schema: NoteSchema }]),
+    MongooseModule.forFeature([{ name: 'Sales', schema: SalesSchema }]),
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
@@ -28,4 +28,4 @@ import { JwtModule } from '@nestjs/jwt';
     MailModule,
   ],
 })
-export class NotesModule {}
+export class SalesModule {}

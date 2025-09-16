@@ -6,6 +6,7 @@ import { NotesModule } from './notes/notes.module';
 import { MailModule } from './mail/mail.module';
 import { NotificationModule } from './notification/notification.module';
 import { MongooseModule } from '@nestjs/mongoose';
+import { SalesModule } from './sales/sales.module';
 @Module({
   controllers: [AppController],
   imports: [
@@ -27,6 +28,7 @@ import { MongooseModule } from '@nestjs/mongoose';
     NotesModule,
     MailModule,
     NotificationModule,
+    SalesModule,
   ],
 })
 export class AppModule {}
