@@ -5,7 +5,7 @@ export default function response({
   token,
 }: {
   message: string;
-  data?: [] | null | object | string;
+  data?: [] | null | object | string | boolean;
   statusCode: number;
   token?: string;
 }) {

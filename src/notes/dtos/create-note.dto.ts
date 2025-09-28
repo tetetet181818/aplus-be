@@ -1,9 +1,9 @@
-import { IsString, IsNotEmpty, IsOptional, IsNumber } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class CreateNoteDto {
   @IsOptional()
   @IsString()
-  contact_method?: string;
+  contactMethod?: string;
 
   @IsString()
   @IsNotEmpty({ message: '📌 العنوان مطلوب' })
@@ -13,7 +13,6 @@ export class CreateNoteDto {
   @IsString()
   description?: string;
 
-  @IsNumber()
   @IsNotEmpty({ message: '💰 السعر مطلوب' })
   price: number;
 
@@ -22,11 +21,9 @@ export class CreateNoteDto {
   subject?: string;
 
   @IsOptional()
-  @IsNumber()
-  pages_number?: number;
+  pagesNumber?: number;
 
   @IsOptional()
-  @IsNumber()
   year?: number;
 
   @IsOptional()
@@ -36,4 +33,7 @@ export class CreateNoteDto {
   @IsOptional()
   @IsString()
   university?: string;
+
+  @IsNotEmpty()
+  termsAccepted: string;
 }

@@ -36,7 +36,7 @@ export class Note {
   reviews: Review[];
 
   @Prop({ type: String, required: false })
-  contact_method: string;
+  contactMethod: string;
 
   @Prop({ type: String, required: false })
   cover_url: string;
@@ -57,7 +57,7 @@ export class Note {
   owner_id: string;
 
   @Prop({ type: Number, required: true })
-  pages_number: number;
+  pagesNumber: number;
 
   @Prop({ type: Number, required: true })
   year: number;
@@ -76,6 +76,9 @@ export class Note {
 
   @Prop({ type: Boolean, default: true })
   isPublish: boolean;
+
+  @Prop({ type: Boolean, default: true })
+  termsAccepted: boolean;
 }
 
 export const NoteSchema = SchemaFactory.createForClass(Note);

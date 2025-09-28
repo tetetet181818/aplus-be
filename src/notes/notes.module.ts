@@ -6,13 +6,19 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { MailModule } from '../mail/mail.module';
 import { NoteSchema } from '../schemas/note.schema';
 import { JwtModule } from '@nestjs/jwt';
+import { MulterModule } from '@nestjs/platform-express';
+import { CloudinaryConfig } from '../cloudinary/cloudinary.config';
+import { UserSchema } from '../schemas/users.schema';
 
 @Module({
   controllers: [NotesController],
   providers: [NotesService],
   imports: [
     ConfigModule,
-    MongooseModule.forFeature([{ name: 'Note', schema: NoteSchema }]),
+    MongooseModule.forFeature([
+      { name: 'Note', schema: NoteSchema },
+      { name: 'User', schema: UserSchema },
+    ]),
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
@@ -25,7 +31,14 @@ import { JwtModule } from '@nestjs/jwt';
         };
       },
     }),
+    MulterModule.register({
+      limits: { fileSize: 10 * 1024 * 1024 },
+    }),
     MailModule,
   ],
 })
-export class NotesModule {}
+export class NotesModule {
+  constructor() {
+    CloudinaryConfig();
+  }
+}

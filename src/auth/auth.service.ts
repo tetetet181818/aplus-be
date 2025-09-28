@@ -37,7 +37,10 @@ export class AuthService {
   ) {}
 
   public async getCurrentUser(id: string) {
-    const user = await this.userModel.findById(id).select('-password').lean();
+    const user = await this.userModel
+      .findOne({ _id: id })
+      .select('-password')
+      .lean();
 
     if (!user) {
       throw new NotFoundException('المستخدم غير موجود 🚫');
@@ -76,7 +79,8 @@ export class AuthService {
     };
 
     const token = await this.jwtService.signAsync(payload, {
-      expiresIn: '1h',
+      secret: this.config.get<string>('JWT_SECRET'),
+      expiresIn: this.config.get<string>('JWT_EXPIRES_IN'),
     });
 
     try {
@@ -84,9 +88,9 @@ export class AuthService {
         email,
         confirmationURL: `${
           this.config.get<string>('NODE_ENV') === 'development'
-            ? this.config.get<string>('DEVELOPMENT_SERVER_DOMAIN')
-            : this.config.get<string>('PRODUCTION_SERVER_DOMAIN')
-        }/auth/verify?token=${token}`,
+            ? this.config.get<string>('FRONTEND_SERVER_DEVELOPMENT')
+            : this.config.get<string>('FRONTEND_SERVER_PRODUCTION')
+        }/verify?token=${token}`,
       });
     } catch (error) {
       console.error(`❌ Failed to send email to ${error}`);
@@ -104,8 +108,12 @@ export class AuthService {
    */
   public async verify(token: string) {
     try {
-      const decoded = await this.jwtService.verifyAsync<RegisterPayload>(token);
-
+      const decoded = await this.jwtService.verifyAsync<RegisterPayload>(
+        token,
+        {
+          secret: this.config.get<string>('JWT_SECRET'),
+        },
+      );
       const exists = await this.userModel.findOne({ email: decoded.email });
       if (exists) {
         throw new ConflictException('هذا البريد مسجّل بالفعل 🚫');
@@ -119,7 +127,7 @@ export class AuthService {
       });
 
       return response({
-        message: '🎊 تم تفعيل حسابك بنجاح! يمكنك الآن تسجيل الدخول 🚀',
+        message: '🎊 تم تفعيل حسابك بنجاح! يمكنك الآن استخدام المنصه 🚀',
         data: [{ id: newUser._id, email: newUser.email }],
         statusCode: 201,
       });
