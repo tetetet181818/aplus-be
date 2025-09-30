@@ -193,12 +193,12 @@ export class AuthService {
         email,
         resetURL: `${
           this.config.get<string>('NODE_ENV') === 'development'
-            ? this.config.get<string>('DEVELOPMENT_SERVER_DOMAIN')
-            : this.config.get<string>('PRODUCTION_SERVER_DOMAIN')
-        }/auth/reset-password?token=${token}`,
+            ? this.config.get<string>('FRONTEND_SERVER_DEVELOPMENT')
+            : this.config.get<string>('FRONTEND_SERVER_PRODUCTION')
+        }/reset-password?token=${token}`,
       });
     } catch (error) {
-      console.error(`❌ Failed to send reset email to ${error}`);
+      console.error(` Failed to send reset email to ${error}`);
       throw new BadRequestException('تعذر إرسال رابط إعادة التعيين 😔');
     }
 
@@ -211,6 +211,7 @@ export class AuthService {
   /**
    * Reset user password if token is valid.
    */
+
   public async resetPassword(token: string, newPassword: string) {
     try {
       const decoded =
@@ -272,9 +273,6 @@ export class AuthService {
       throw new NotFoundException('الحساب غير موجود ❌');
     }
 
-    if (body.fullName) {
-      user.fullName = body.fullName;
-    }
     if (body.university) {
       user.university = body.university;
     }
@@ -283,7 +281,6 @@ export class AuthService {
 
     return response({
       message: 'تم تحديث بياناتك بنجاح 🌟',
-      data: [{ id: user._id, email: user.email }],
       statusCode: 200,
     });
   }

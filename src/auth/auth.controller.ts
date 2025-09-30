@@ -73,10 +73,11 @@ export class AuthController {
 
   @Put('/update-user')
   @HttpCode(200)
+  @UseGuards(AuthGuard)
   public updateUser(
-    @Query('userId') userId: string,
+    @CurrentUser() payload: JwtPayload,
     @Body() body: UpdateUserDto,
   ) {
-    return this.authService.updateUser(userId, body);
+    return this.authService.updateUser(payload.id, body);
   }
 }

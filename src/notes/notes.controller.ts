@@ -55,6 +55,12 @@ export class NotesController {
     return this.notesService.getPurchasedNotes(payload.id);
   }
 
+  @Get('/likes-notes')
+  @UseGuards(AuthGuard)
+  public getLikesNotes(@CurrentUser() payload: JwtPayload) {
+    return this.notesService.getLikesNotes(payload.id);
+  }
+
   @Post('/create')
   @UseGuards(AuthGuard)
   @UseInterceptors(
