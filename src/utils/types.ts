@@ -14,6 +14,3 @@ export interface RegisterPayload {
 /**
  * Forget password payload inside reset token.
  */
-export interface ResetPasswordPayload {
-  email: string;
-}

@@ -106,18 +106,21 @@ export class NotesService {
   }
 
   public async getPurchasedNotes(userId: string) {
-    const notes = await this.noteModel.find({ purchased_by: userId }).lean();
+    const notes = await this.noteModel
+      .find({ purchased_by: { $in: [userId] } })
+      .lean();
 
-    if (!notes || notes.length === 0) {
+    if (!notes) {
       throw new NotFoundException('لم تقم بشراء أي ملخصات بعد');
     }
 
     return response({
       message: 'تم جلب جميع الملخصات التي قمت بشرائها بنجاح',
       statusCode: 200,
-      data: notes,
+      data: notes?.length > 0 ? notes : [],
     });
   }
+
   /**
    * Fetch all notes with pagination and sorting
    * @param page - Current page number (default: 1)
@@ -126,6 +129,7 @@ export class NotesService {
    * @param sortOrder - Sort order: asc or desc (default: desc)
    * @returns Paginated notes with metadata
    */
+
   public async getAllNotes(
     page: number = 1,
     limit: number = 10,
@@ -155,13 +159,13 @@ export class NotesService {
       this.noteModel.countDocuments(),
     ]);
 
-    if (!notes || notes.length === 0) {
+    if (!notes) {
       throw new NotFoundException('No notes available');
     }
 
     return {
       message: 'Notes retrieved successfully',
-      data: notes,
+      data: notes?.length > 0 ? notes : [],
       pagination: {
         total,
         page,
@@ -177,7 +181,6 @@ export class NotesService {
     const singleNote = await this.noteModel.findOne({ _id: id }).lean();
 
     // get owner data in the same query
-    console.log(singleNote?.owner_id);
     const ownerData = await this.usersModel
       .findById(singleNote?.owner_id)
       .select('fullName email university');
@@ -206,6 +209,7 @@ export class NotesService {
     }
 
     const deletedNote = await this.noteModel.findByIdAndDelete(noteId);
+
     if (!deletedNote) {
       throw new NotFoundException('حدث خطأ أثناء الحذف');
     }
@@ -220,14 +224,35 @@ export class NotesService {
   public async getUserNotes(userId: string) {
     const notes = await this.noteModel.find({ owner_id: userId }).lean();
 
-    if (!notes || notes.length === 0) {
+    if (!notes) {
       throw new NotFoundException('لا توجد ملخصات خاصة بك حالياً');
     }
 
     return response({
       message: 'تم جلب جميع ملخصاتك بنجاح',
       statusCode: 200,
-      data: notes,
+      data: notes?.length > 0 ? notes : [],
+    });
+  }
+
+  /** get like notes */
+  public async getLikesNotes(userId: string) {
+    const user = await this.usersModel.findById(userId).select('likesList');
+
+    if (!user) {
+      throw new NotFoundException('المستخدم غير موجود');
+    }
+
+    const noteIds = user.likesList.map(
+      (item: { noteId: string }) => item.noteId,
+    );
+
+    const notes = await this.noteModel.find({ _id: { $in: noteIds } });
+
+    return response({
+      data: notes?.length > 0 ? notes : [],
+      message: 'تم جلب الملخصات المعجب بها',
+      statusCode: 200,
     });
   }
 

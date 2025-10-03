@@ -1,30 +1,58 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Withdrawal } from '../schemas/withdrawal.schema';
 import response from '../utils/response.pattern';
 import { CreateWithdrawalDto } from './dtos/create-withdrawals.dto';
 import { UpdateWithdrawalDto } from './dtos/update-withdrawals.dto';
+import { User } from '../schemas/users.schema';
 
 @Injectable()
 export class WithdrawalsService {
   constructor(
     @InjectModel('Withdrawal')
     private readonly withdrawalModel: Model<Withdrawal>,
+    @InjectModel(User.name)
+    private readonly usersModel: Model<User>,
   ) {}
 
-  public async createWithdrawal(body: CreateWithdrawalDto) {
-    const withdrawal = await this.withdrawalModel.create(body);
+  public async createWithdrawal(body: CreateWithdrawalDto, userId: string) {
+    const newWithdrawal = { userId, ...body };
 
-    if (!withdrawal) {
-      throw new NotFoundException('حدث خطأ أثناء إنشاء التحويل');
+    const user = await this.usersModel
+      .findById(userId)
+      .select('fullName email withdrawalTimes');
+
+    if (!user) {
+      throw new NotFoundException('المستخدم غير موجود');
     }
 
-    return response({
-      message: 'تم إنشاء التحويل بنجاح',
+    // check if user still has withdrawal times left
+    if (user.withdrawalTimes === 0) {
+      throw new BadRequestException('رصيد مرات السحب المتاحة يساوي صفر');
+    }
+
+    // create the withdrawal
+    const withdrawal = await this.withdrawalModel.create(newWithdrawal);
+
+    if (!withdrawal) {
+      throw new NotFoundException('حدث خطأ أثناء إنشاء عملية السحب');
+    }
+
+    // decrement user's withdrawal times
+    user.withdrawalTimes = user.withdrawalTimes - 1;
+
+    await user.save();
+
+    return {
+      message: 'تم إنشاء عملية السحب بنجاح',
       data: withdrawal,
       statusCode: 201,
-    });
+    };
   }
 
   public async getAllWithdrawals() {

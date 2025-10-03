@@ -1,21 +1,6 @@
-import {
-  IsString,
-  IsNumber,
-  IsNotEmpty,
-  IsOptional,
-  IsDate,
-} from 'class-validator';
+import { IsString, IsNumber, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class UpdateWithdrawalDto {
-  @IsString({
-    message: 'معرف المستخدم يجب أن يكون نصًا، يا صديقي! 😊',
-  })
-  @IsNotEmpty({
-    message: 'لا تنسَ إدخال معرف المستخدم، من فضلك! 🙏',
-  })
-  @IsOptional()
-  user_id?: string;
-
   @IsNumber()
   @IsNotEmpty({
     message: 'لا تترك المبلغ فارغًا، من فضللك! 💸',
@@ -36,7 +21,7 @@ export class UpdateWithdrawalDto {
     message: 'الملاحظات الإدارية يجب أن تكون نصًا، إن وجدت! 😊',
   })
   @IsOptional()
-  admin_notes?: string;
+  adminNotes?: string;
 
   @IsString({
     message: 'اسم الحساب يجب أن يكون نصًا، يا صديقي! 😄',
@@ -45,7 +30,7 @@ export class UpdateWithdrawalDto {
     message: 'أدخل اسم الحساب، من فضلك! 📝',
   })
   @IsOptional()
-  account_name?: string;
+  accountName?: string;
 
   @IsString({
     message: 'اسم البنك يجب أن يكون نصًا، يا عزيزي! 😊',
@@ -54,7 +39,7 @@ export class UpdateWithdrawalDto {
     message: 'لا تنسَ إدخال اسم البنك، من فضلك! 🏦',
   })
   @IsOptional()
-  bank_name?: string;
+  bankName?: string;
 
   @IsString({
     message: 'رقم الـ IBAN يجب أن يكون نصًا، يا حبيبي! 😄',
@@ -72,14 +57,11 @@ export class UpdateWithdrawalDto {
   @IsNotEmpty({
     message: 'أدخل رقم التوجيه إذا كان متاحًا، من فضلك! 📞',
   })
-  routing_number?: string;
+  routingNumber?: string;
 
-  @IsDate({
-    message: 'تاريخ التوجيه يجب أن يكون تاريخًا صالحًا، يا صديقي! 😄',
-  })
   @IsOptional()
   @IsNotEmpty({
     message: 'أدخل تاريخ التوجيه إذا كان متاحًا، من فضلك! 📅',
   })
-  routing_date?: Date;
+  routingDate?: Date;
 }
