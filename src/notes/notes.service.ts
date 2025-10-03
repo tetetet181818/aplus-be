@@ -106,16 +106,18 @@ export class NotesService {
   }
 
   public async getPurchasedNotes(userId: string) {
-    const notes = await this.noteModel.find({ purchased_by: userId }).lean();
+    const notes = await this.noteModel
+      .find({ purchased_by: { $in: [userId] } })
+      .lean();
 
-    if (!notes || notes.length === 0) {
+    if (!notes) {
       throw new NotFoundException('لم تقم بشراء أي ملخصات بعد');
     }
 
     return response({
       message: 'تم جلب جميع الملخصات التي قمت بشرائها بنجاح',
       statusCode: 200,
-      data: notes,
+      data: notes?.length > 0 ? notes : [],
     });
   }
 
@@ -157,13 +159,13 @@ export class NotesService {
       this.noteModel.countDocuments(),
     ]);
 
-    if (!notes || notes.length === 0) {
+    if (!notes) {
       throw new NotFoundException('No notes available');
     }
 
     return {
       message: 'Notes retrieved successfully',
-      data: notes,
+      data: notes?.length > 0 ? notes : [],
       pagination: {
         total,
         page,
@@ -222,14 +224,14 @@ export class NotesService {
   public async getUserNotes(userId: string) {
     const notes = await this.noteModel.find({ owner_id: userId }).lean();
 
-    if (!notes || notes.length === 0) {
+    if (!notes) {
       throw new NotFoundException('لا توجد ملخصات خاصة بك حالياً');
     }
 
     return response({
       message: 'تم جلب جميع ملخصاتك بنجاح',
       statusCode: 200,
-      data: notes,
+      data: notes?.length > 0 ? notes : [],
     });
   }
 
@@ -248,7 +250,7 @@ export class NotesService {
     const notes = await this.noteModel.find({ _id: { $in: noteIds } });
 
     return response({
-      data: notes,
+      data: notes?.length > 0 ? notes : [],
       message: 'تم جلب الملخصات المعجب بها',
       statusCode: 200,
     });

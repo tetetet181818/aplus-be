@@ -33,6 +33,9 @@ export class User {
 
   @Prop({ type: Number, default: 2 })
   withdrawalTimes: number;
+
+  @Prop({ type: String, required: false, default: null })
+  resetPasswordToken: string | null;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

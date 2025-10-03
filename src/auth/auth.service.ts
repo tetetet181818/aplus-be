@@ -13,14 +13,12 @@ import { RegisterDto } from './dtos/register.dto';
 import response from '../utils/response.pattern';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
-import {
-  JwtPayload,
-  RegisterPayload,
-  ResetPasswordPayload,
-} from '../utils/types';
+import { JwtPayload, RegisterPayload } from '../utils/types';
 import { LoginDto } from './dtos/login.dto';
 import { MailService } from '../mail/mail.service';
 import { UpdateUserDto } from './dtos/update-user.dto';
+import { randomBytes } from 'node:crypto';
+import { ResetPasswordDto } from './dtos/reset-password.dto';
 
 /**
  * Temporary payload stored inside the verification token.
@@ -183,10 +181,8 @@ export class AuthService {
       );
     }
 
-    const payload: ResetPasswordPayload = { email };
-    const token = await this.jwtService.signAsync(payload, {
-      expiresIn: '15m',
-    });
+    user.resetPasswordToken = randomBytes(32).toString('hex');
+    await user.save();
 
     try {
       await this.mailService.forgetPassword({
@@ -195,7 +191,8 @@ export class AuthService {
           this.config.get<string>('NODE_ENV') === 'development'
             ? this.config.get<string>('FRONTEND_SERVER_DEVELOPMENT')
             : this.config.get<string>('FRONTEND_SERVER_PRODUCTION')
-        }/reset-password?token=${token}`,
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        }/reset-password?userId=${user?._id}&resetPasswordToken=${user.resetPasswordToken}`,
       });
     } catch (error) {
       console.error(` Failed to send reset email to ${error}`);
@@ -212,18 +209,26 @@ export class AuthService {
    * Reset user password if token is valid.
    */
 
-  public async resetPassword(token: string, newPassword: string) {
+  public async resetPassword(dto: ResetPasswordDto) {
+    const { userId, resetPasswordToken, newPassword } = dto;
     try {
-      const decoded =
-        await this.jwtService.verifyAsync<ResetPasswordPayload>(token);
-
-      const user = await this.userModel.findOne({ email: decoded.email });
+      const user = await this.userModel.findOne({ _id: userId });
       if (!user) {
         throw new NotFoundException('الحساب غير موجود 🔍');
       }
 
+      if (
+        user.resetPasswordToken === null ||
+        user.resetPasswordToken !== resetPasswordToken
+      ) {
+        throw new BadRequestException(
+          'رابط إعادة التعيين غير صالح أو منتهي ⏳',
+        );
+      }
+
       const salt = await bcrypt.genSalt();
       user.password = await bcrypt.hash(newPassword, salt);
+      user.resetPasswordToken = null;
       await user.save();
 
       return response({
