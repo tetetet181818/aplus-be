@@ -9,6 +9,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { SalesModule } from './sales/sales.module';
 import { WithdrawalsModule } from './withdrawals/withdrawals.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 @Module({
   controllers: [AppController],
   imports: [
@@ -33,6 +34,7 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
     SalesModule,
     WithdrawalsModule,
     CloudinaryModule,
+    DashboardModule,
   ],
 })
 export class AppModule {}
