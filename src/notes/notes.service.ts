@@ -18,6 +18,8 @@ import {
   UploadApiErrorResponse,
 } from 'cloudinary';
 import { User } from 'src/schemas/users.schema';
+import axios from 'axios';
+import { ConfigService } from '@nestjs/config';
 @Injectable()
 export class NotesService {
   constructor(
@@ -25,6 +27,7 @@ export class NotesService {
     private readonly noteModel: Model<Note>,
     @InjectModel(User.name)
     private readonly usersModel: Model<User>,
+    private readonly config: ConfigService,
   ) {}
 
   /** Create new note with comprehensive error handling */
@@ -271,8 +274,14 @@ export class NotesService {
       throw new NotFoundException('الملخص المطلوب غير موجود');
     }
 
+    const userAvatar =
+      'https://ui-avatars.com/api/?name=' +
+      encodeURIComponent(review.userName) +
+      '&background=random&length=1&size=128';
+
     const newReview = {
       _id: new Types.ObjectId().toString(),
+      userAvatar,
       ...review,
     };
 
@@ -296,7 +305,7 @@ export class NotesService {
     const note = await this.noteModel.findById(noteId);
     if (!note) throw new NotFoundException('الملخص غير موجود');
 
-    const review = note.reviews.find((item) => item._id === reviewId);
+    const review = note?.reviews.find((item) => item._id === reviewId);
 
     if (!review) throw new NotFoundException('المراجعة غير موجودة');
 
@@ -338,9 +347,78 @@ export class NotesService {
     });
   }
 
-  public purchaseNote(noteId, userId) {
-    console.log(noteId);
-    console.log(userId);
+  public async purchaseNote(noteId: string, userId: string) {
+    const note = await this.noteModel.findById(noteId);
+    if (!note) {
+      throw new NotFoundException('الملخص المطلوب غير موجود');
+    }
+
+    if (note.owner_id === userId) {
+      throw new BadRequestException('لا يمكنك شراء ملخص خاص بك');
+    }
+
+    if (note.purchased_by?.includes(userId)) {
+      throw new BadRequestException('لقد قمت بشراء هذا الملخص مسبقاً');
+    }
+
+    if (!note.price || note.price <= 0) {
+      throw new BadRequestException('سعر الملخص غير صالح');
+    }
+
+    // ✅ Prepare payment request
+    const paymentPayload = {
+      amount: Math.round(note.price * 100), // convert to halalas
+      currency: 'SAR',
+      description: `شراء الملخص: ${note.title}`,
+      callback_url: `${this.config.get<string>('APP_URL')}/payments/moyaser/callback`,
+      source: { type: 'creditcard' },
+    };
+
+    let paymentResult;
+    try {
+      paymentResult = await axios.post(
+        'https://api.moyasar.com/v1/payments',
+        paymentPayload,
+        {
+          auth: {
+            username: this.config.get<string>('MOYASAR_API_SECRET_KEY') || '',
+            password: '', // Moyasar uses Basic Auth with key as username only
+          },
+        },
+      );
+    } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const errMsg =
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        error?.response?.data?.message || 'فشل في إنشاء عملية الدفع';
+      throw new BadRequestException(errMsg);
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+    const paymentStatus = paymentResult?.data?.status;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+    const paymentId = paymentResult?.data?.id;
+
+    if (!paymentStatus || paymentStatus !== 'paid') {
+      throw new BadRequestException('عملية الدفع لم تكتمل بعد');
+    }
+
+    // ✅ Mark note as purchased
+    await this.noteModel.updateOne(
+      { _id: noteId },
+      { $push: { purchased_by: userId } },
+    );
+
+    return response({
+      message: 'تم شراء الملخص بنجاح',
+      statusCode: 200,
+      data: {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        paymentId,
+        amount: note.price,
+        noteId,
+      },
+    });
   }
   /** user make like to note and store noteId in like_list in user Schema */
 

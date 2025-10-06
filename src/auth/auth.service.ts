@@ -19,6 +19,7 @@ import { MailService } from '../mail/mail.service';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { randomBytes } from 'node:crypto';
 import { ResetPasswordDto } from './dtos/reset-password.dto';
+import { Note } from 'src/schemas/note.schema';
 
 /**
  * Temporary payload stored inside the verification token.
@@ -29,6 +30,8 @@ export class AuthService {
   constructor(
     @InjectModel('User')
     private readonly userModel: Model<User>,
+    @InjectModel('Note')
+    private readonly notesModel: Model<Note>,
     private readonly config: ConfigService,
     private readonly jwtService: JwtService,
     private readonly mailService: MailService,
@@ -287,6 +290,35 @@ export class AuthService {
     return response({
       message: 'تم تحديث بياناتك بنجاح 🌟',
       statusCode: 200,
+    });
+  }
+
+  /**
+   * 🔍 Retrieve a user by ID along with all their notes.
+   * @param userId - The ID of the user to retrieve.
+   * @returns Standardized response with user data and owned notes.
+   * @throws NotFoundException if user does not exist.
+   */
+  public async getUserById(userId: string) {
+    // Find user without password
+    const user = await this.userModel
+      .findById(userId)
+      .select('-password')
+      .lean();
+    if (!user) {
+      throw new NotFoundException('المستخدم غير موجود 🚫');
+    }
+
+    // Fetch notes owned by the user
+    const notes = await this.notesModel.find({ owner_id: userId }).lean();
+
+    return response({
+      message: 'تم العثور على المستخدم ✅',
+      statusCode: 200,
+      data: {
+        user,
+        notes: notes.length > 0 ? notes : [],
+      },
     });
   }
 
