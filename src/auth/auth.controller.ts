@@ -8,6 +8,7 @@ import {
   Delete,
   Put,
   UseGuards,
+  Param,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dtos/register.dto';
@@ -76,5 +77,11 @@ export class AuthController {
     @Body() body: UpdateUserDto,
   ) {
     return this.authService.updateUser(payload.id, body);
+  }
+
+  @Get('/:id')
+  @UseGuards(AuthGuard)
+  public getUserById(@Param('id') id: string) {
+    return this.authService.getUserById(id);
   }
 }
