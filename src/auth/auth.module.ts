@@ -7,6 +7,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { UserSchema } from '../schemas/users.schema';
 import { MailModule } from '../mail/mail.module';
 import { NoteSchema } from '../schemas/note.schema';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   controllers: [AuthController],
@@ -30,6 +31,7 @@ import { NoteSchema } from '../schemas/note.schema';
       },
     }),
     MailModule,
+    NotificationModule,
   ],
 })
 export class AuthModule {}

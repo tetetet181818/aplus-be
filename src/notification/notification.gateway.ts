@@ -1,7 +1,17 @@
-import { WebSocketGateway } from '@nestjs/websockets';
-import { NotificationService } from './notification.service';
+// notifications.gateway.ts
+import { WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import { Server, Socket } from 'socket.io';
 
-@WebSocketGateway()
+@WebSocketGateway({ cors: { origin: ['http://localhost:3000'] } })
 export class NotificationGateway {
-  constructor(private readonly notificationService: NotificationService) {}
+  @WebSocketServer() server: Server;
+
+  async handleConnection(client: Socket) {
+    const userId = client.handshake.query.userId as string;
+    if (userId) await client.join(userId);
+  }
+
+  emitToUser(userId: string, payload: any) {
+    this.server.to(userId).emit('notification', payload);
+  }
 }

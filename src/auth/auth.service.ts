@@ -19,7 +19,8 @@ import { MailService } from '../mail/mail.service';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { randomBytes } from 'node:crypto';
 import { ResetPasswordDto } from './dtos/reset-password.dto';
-import { Note } from 'src/schemas/note.schema';
+import { Note } from '../schemas/note.schema';
+import { NotificationService } from '../notification/notification.service';
 
 /**
  * Temporary payload stored inside the verification token.
@@ -35,6 +36,7 @@ export class AuthService {
     private readonly config: ConfigService,
     private readonly jwtService: JwtService,
     private readonly mailService: MailService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   public async getCurrentUser(id: string) {
@@ -153,8 +155,14 @@ export class AuthService {
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      throw new UnauthorizedException('بيانات الدخول غير صحيحة 😕');
+      throw new UnauthorizedException('بيانات الدخول غير صحيحة ❌');
     }
+
+    await this.notificationService.create({
+      userId: user?._id.toString(),
+      title: 'تسجيل دخول ناجح 🎉',
+      message: `مرحباً ${user.fullName || 'بك'}! سعداء بعودتك معنا 🌟`,
+    });
 
     const payload: JwtPayload = {
       id: user._id.toString(),

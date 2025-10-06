@@ -35,6 +35,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
     WithdrawalsModule,
     CloudinaryModule,
     DashboardModule,
+    NotificationModule,
   ],
 })
 export class AppModule {}
