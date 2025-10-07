@@ -19,6 +19,12 @@ import type { JwtPayload } from '../utils/types';
 export class WithdrawalsController {
   constructor(private readonly withdrawalsService: WithdrawalsService) {}
 
+  @Get('/me')
+  @UseGuards(AuthGuard)
+  public getAllUserWithdrawals(@CurrentUser() payload: JwtPayload) {
+    return this.withdrawalsService.getAllUserWithdrawals(payload.id);
+  }
+
   @Post('/create')
   @UseGuards(AuthGuard)
   public createWithdrawal(

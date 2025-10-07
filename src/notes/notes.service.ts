@@ -138,10 +138,13 @@ export class NotesService {
     limit: number = 10,
     sortBy: string = 'createdAt',
     sortOrder: 'asc' | 'desc' = 'desc',
+    university?: string,
+    college?: string,
+    year?: string,
   ) {
     const skip = (page - 1) * limit;
 
-    // Allowed sort fields
+    // ===== Allowed sort fields =====
     const sortOptions: Record<string, string> = {
       price: 'price',
       year: 'year',
@@ -152,23 +155,29 @@ export class NotesService {
     const sortField = sortOptions[sortBy] || 'createdAt';
     const sortDirection = sortOrder === 'asc' ? 1 : -1;
 
+    const filters: Record<string, any> = {};
+
+    if (university) filters['university'] = university;
+    if (college) filters['college'] = college;
+    if (year) filters['year'] = year;
+
     const [notes, total] = await Promise.all([
       this.noteModel
-        .find()
+        .find(filters)
         .sort({ [sortField]: sortDirection })
         .skip(skip)
         .limit(limit)
         .lean(),
-      this.noteModel.countDocuments(),
+      this.noteModel.countDocuments(filters),
     ]);
 
-    if (!notes) {
-      throw new NotFoundException('No notes available');
+    if (!notes || notes.length === 0) {
+      throw new NotFoundException('لا توجد ملخصات مطابقة للبحث.');
     }
 
     return {
-      message: 'Notes retrieved successfully',
-      data: notes?.length > 0 ? notes : [],
+      message: 'تم استرجاع الملخصات بنجاح',
+      data: notes,
       pagination: {
         total,
         page,
