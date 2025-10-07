@@ -8,6 +8,7 @@ import {
   Post,
   Put,
   Query,
+  Res,
   UploadedFiles,
   UseGuards,
   UseInterceptors,
@@ -20,6 +21,7 @@ import type { JwtPayload } from '../utils/types';
 import { AddReviewDto } from './dtos/add-review.dto';
 import { UpdateReviewDto } from './dtos/update-review.dto';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import type { Response } from 'express';
 
 @Controller('/api/v1/notes')
 export class NotesController {
@@ -159,8 +161,9 @@ export class NotesController {
   public purchaseNote(
     @Param('id') noteId: string,
     @CurrentUser() payload: JwtPayload,
+    @Body() body: { invoice_id: string; status?: string },
   ) {
-    return this.notesService.purchaseNote(noteId, payload.id);
+    return this.notesService.purchaseNote(noteId, payload.id, body);
   }
   @Post('/:id/like')
   @HttpCode(200)
@@ -189,5 +192,25 @@ export class NotesController {
     @CurrentUser() payload: JwtPayload,
   ) {
     return this.notesService.likeOrNot(noteId, payload.id);
+  }
+  @Post('/download/:publicId')
+  async downloadNote(
+    @Param('publicId') publicId: string,
+    @Res() res: Response,
+  ) {
+    return this.notesService.downloadNote(publicId, res);
+  }
+
+  @Post('/create-payment-link')
+  async createPaymentLink(
+    @Query('noteId') noteId: string,
+    @Query('userId') userId: string,
+    @Query('amount') amount: string,
+  ) {
+    return this.notesService.createPaymentLink({
+      noteId,
+      userId,
+      amount,
+    });
   }
 }

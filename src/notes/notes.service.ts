@@ -17,10 +17,13 @@ import {
   UploadApiResponse,
   UploadApiErrorResponse,
 } from 'cloudinary';
-import { User } from 'src/schemas/users.schema';
+import { User } from '../schemas/users.schema';
 import axios from 'axios';
 import { ConfigService } from '@nestjs/config';
 import { NotificationService } from '../notification/notification.service';
+import { Response } from 'express';
+import { SalesService } from '../sales/sales.service';
+import { PLATFORM_FREE } from '../utils/constants';
 @Injectable()
 export class NotesService {
   constructor(
@@ -30,6 +33,7 @@ export class NotesService {
     private readonly usersModel: Model<User>,
     private readonly config: ConfigService,
     private readonly notificationService: NotificationService,
+    private readonly salesService: SalesService,
   ) {}
 
   /** Create new note with comprehensive error handling */
@@ -390,7 +394,12 @@ export class NotesService {
     });
   }
 
-  public async purchaseNote(noteId: string, userId: string) {
+  /**  purchase note */
+  public async purchaseNote(
+    noteId: string,
+    userId: string,
+    body: { invoice_id: string; status?: string },
+  ) {
     const note = await this.noteModel.findById(noteId);
     if (!note) {
       throw new NotFoundException('الملخص المطلوب غير موجود');
@@ -404,64 +413,82 @@ export class NotesService {
       throw new BadRequestException('لقد قمت بشراء هذا الملخص مسبقاً');
     }
 
-    if (!note.price || note.price <= 0) {
-      throw new BadRequestException('سعر الملخص غير صالح');
-    }
+    // create sales partion
+    await this.salesService.createSale({
+      sellerId: note.owner_id.toString(),
+      buyerId: userId,
+      note_id: noteId,
+      amount: note.price,
+      payment_method: 'credit_card',
+      note_title: note.title,
+      invoice_id: body.invoice_id,
+      status: body.status || '',
+      message:
+        'Thank you for your purchase! You can now access the note in your dashboard.',
+      platform_fee: PLATFORM_FREE,
+    });
 
-    const paymentPayload = {
-      amount: Math.round(note.price * 100),
-      currency: 'SAR',
-      description: `شراء الملخص: ${note.title}`,
-      callback_url: `${this.config.get<string>('APP_URL')}/payments/moyaser/callback`,
-      source: { type: 'creditcard' },
-    };
-
-    let paymentResult;
-    try {
-      paymentResult = await axios.post(
-        'https://api.moyasar.com/v1/payments',
-        paymentPayload,
-        {
-          auth: {
-            username: this.config.get<string>('MOYASAR_API_SECRET_KEY') || '',
-            password: '', // Moyasar uses Basic Auth with key as username only
-          },
-        },
-      );
-    } catch (error) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const errMsg =
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        error?.response?.data?.message || 'فشل في إنشاء عملية الدفع';
-      throw new BadRequestException(errMsg);
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-    const paymentStatus = paymentResult?.data?.status;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-    const paymentId = paymentResult?.data?.id;
-
-    if (!paymentStatus || paymentStatus !== 'paid') {
-      throw new BadRequestException('عملية الدفع لم تكتمل بعد');
-    }
-
-    // ✅ Mark note as purchased
-    await this.noteModel.updateOne(
+    const updateNote = await this.noteModel.updateOne(
       { _id: noteId },
       { $push: { purchased_by: userId } },
     );
 
+    if (!updateNote) {
+      throw new NotFoundException('حدث خطاء اثناء شراء الملخص');
+    }
+
     return response({
       message: 'تم شراء الملخص بنجاح',
       statusCode: 200,
-      data: {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        paymentId,
-        amount: note.price,
-        noteId,
-      },
     });
   }
+
+  public async createPaymentLink({
+    noteId,
+    userId,
+    amount,
+  }: {
+    noteId: string;
+    userId: string;
+    amount: string;
+  }) {
+    const domain =
+      this.config.get<string>('NODE_ENV') === 'production'
+        ? this.config.get<string>('FRONTEND_SERVER_PRODUCTION')
+        : this.config.get<string>('FRONTEND_SERVER_DEVELOPMENT');
+    try {
+      const res = await axios.post(
+        'https://api.moyasar.com/v1/invoices',
+        {
+          amount: Math.round(parseFloat(amount) * 100),
+          currency: 'SAR',
+          description: `شراء ملخص رقم ${noteId}`,
+          callback_url: `${domain}/api/payment/callback`,
+          success_url: `${domain}/payment-success?noteId=${noteId}&userId=${userId}`,
+          back_url: `${domain}/checkout?noteId=${noteId}`,
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization:
+              'Basic ' +
+              btoa(`${this.config.get<string>('MOYASAR_API_SECRET_KEY')}`),
+          },
+        },
+      );
+      return response({
+        message: 'create payment link successfully',
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        data: res.data,
+        statusCode: 200,
+      });
+    } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      console.error('Moyasar error:', error.res?.data || error.message);
+      throw error;
+    }
+  }
+
   /** user make like to note and store noteId in like_list in user Schema */
 
   public async likeNote(noteId: string, userId: string) {
@@ -535,6 +562,31 @@ export class NotesService {
       data: alreadyLiked,
       statusCode: 200,
     });
+  }
+
+  public async downloadNote(publicId: string, res: Response) {
+    try {
+      // Your Cloudinary file URL pattern
+      const cloudinaryUrl = `https://res.cloudinary.com/dmdncwenn/image/upload/fl_attachment/v1759050393/pdfs/${publicId}.pdf`;
+
+      const response = await axios.get(cloudinaryUrl, {
+        responseType: 'stream',
+      });
+
+      // Forward headers for download
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${publicId}.pdf"`,
+      );
+      res.setHeader('Content-Type', 'application/pdf');
+
+      // Pipe the file directly to response
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+      response.data.pipe(res);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (err) {
+      throw new NotFoundException('File not found or download failed.');
+    }
   }
 
   private async uploadImage(

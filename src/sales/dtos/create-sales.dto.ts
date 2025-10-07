@@ -13,13 +13,13 @@ export class CreateSalesDto {
   @IsNotEmpty()
   note_id: string;
 
-  @IsNumber()
-  @IsNotEmpty()
-  amount: number;
-
   @IsString()
   @IsNotEmpty()
   status: string;
+
+  @IsNumber()
+  @IsNotEmpty()
+  amount: number;
 
   @IsString()
   @IsNotEmpty()

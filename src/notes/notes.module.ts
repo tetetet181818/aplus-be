@@ -10,6 +10,7 @@ import { MulterModule } from '@nestjs/platform-express';
 import { CloudinaryConfig } from '../cloudinary/cloudinary.config';
 import { UserSchema } from '../schemas/users.schema';
 import { NotificationModule } from '../notification/notification.module';
+import { SalesModule } from '../sales/sales.module';
 
 @Module({
   controllers: [NotesController],
@@ -37,6 +38,7 @@ import { NotificationModule } from '../notification/notification.module';
     }),
     MailModule,
     NotificationModule,
+    SalesModule,
   ],
 })
 export class NotesModule {

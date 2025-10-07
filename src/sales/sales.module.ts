@@ -29,5 +29,6 @@ import { NotificationModule } from '../notification/notification.module';
     MailModule,
     NotificationModule,
   ],
+  exports: [SalesService],
 })
 export class SalesModule {}
