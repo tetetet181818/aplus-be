@@ -40,13 +40,26 @@ export class AuthService {
   ) {}
 
   public async getCurrentUser(id: string) {
-    const user = await this.userModel
-      .findOne({ _id: id })
-      .select('-password')
-      .lean();
+    const user = await this.userModel.findOne({ _id: id }).select('-password');
 
     if (!user) {
       throw new NotFoundException('المستخدم غير موجود 🚫');
+    }
+
+    //  Reset logic for monthly withdrawals
+    const now = new Date();
+    const lastReset = user.lastWithdrawalReset
+      ? new Date(user.lastWithdrawalReset)
+      : new Date(0);
+
+    // if a new month has started, reset withdrawalTimes to 2
+    if (
+      now.getMonth() !== lastReset.getMonth() ||
+      now.getFullYear() !== lastReset.getFullYear()
+    ) {
+      user.withdrawalTimes = 2;
+      user.lastWithdrawalReset = now;
+      await user.save();
     }
 
     return response({
