@@ -39,8 +39,29 @@ export class NotesController {
     @Query('limit') limit: number,
     @Query('sortBy') sortBy: string,
     @Query('sortOrder') sortOrder: 'asc' | 'desc',
+    @Query('university') university: string,
+    @Query('collage') collage: string,
+    @Query('year') year: string,
+    // @Query('query') query: string,
+    // @Query('minDownloads') minDownloads: number,
+    // @Query('maxDownloads') maxDownloads: number,
+    // @Query('minPrice') minPrice: number,
+    // @Query('maxPrice') maxPrice: number,
   ) {
-    return this.notesService.getAllNotes(page, limit, sortBy, sortOrder);
+    return this.notesService.getAllNotes(
+      page,
+      limit,
+      sortBy,
+      sortOrder,
+      university,
+      collage,
+      year,
+      // query,
+      // minDownloads,
+      // maxDownloads,
+      // minPrice,
+      // maxPrice,
+    );
   }
 
   @Get('/my-notes')

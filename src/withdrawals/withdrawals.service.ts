@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
@@ -137,5 +138,28 @@ export class WithdrawalsService {
       message: 'تم حذف التحويل بنجاح',
       statusCode: 200,
     });
+  }
+
+  public async getAllUserWithdrawals(userId: string) {
+    try {
+      const withdrawals = await this.withdrawalModel.find({ userId });
+
+      if (withdrawals.length === 0) {
+        return response({
+          message: 'لا توجد تحويلات متاحة حالياً',
+          data: withdrawals,
+          statusCode: 200,
+        });
+      }
+
+      return response({
+        message: 'تم جلب جميع التحويلات بنجاح',
+        data: withdrawals,
+        statusCode: 200,
+      });
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (error) {
+      throw new InternalServerErrorException('حدث خطأ أثناء جلب التحويلات');
+    }
   }
 }
