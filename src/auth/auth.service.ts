@@ -255,6 +255,12 @@ export class AuthService {
       user.resetPasswordToken = null;
       await user.save();
 
+      await this.notificationService.create({
+        userId: user?._id.toString(),
+        title: 'تم تغيير كلمة المرور بنجاح 🔐',
+        message: `تم تغيير كلمة المرور بنجاح، يمكنك تسجيل الدخول الآن 🔐`,
+      });
+
       return response({
         message: 'تم تغيير كلمة المرور بنجاح، يمكنك تسجيل الدخول الآن 🔐',
         statusCode: 200,

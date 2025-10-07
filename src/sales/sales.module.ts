@@ -6,6 +6,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { JwtModule } from '@nestjs/jwt';
 import { SalesSchema } from '../schemas/sales.schema';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   controllers: [SalesController],
@@ -26,6 +27,7 @@ import { SalesSchema } from '../schemas/sales.schema';
       },
     }),
     MailModule,
+    NotificationModule,
   ],
 })
 export class SalesModule {}

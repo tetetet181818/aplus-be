@@ -8,6 +8,7 @@ import { SalesSchema } from '../schemas/sales.schema';
 import { WithdrawalSchema } from '../schemas/withdrawal.schema';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   controllers: [DashboardController],
@@ -31,6 +32,7 @@ import { ConfigService } from '@nestjs/config';
         };
       },
     }),
+    NotificationModule,
   ],
 })
 export class DashboardModule {}

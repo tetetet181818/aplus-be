@@ -11,6 +11,7 @@ import response from '../utils/response.pattern';
 import { CreateWithdrawalDto } from './dtos/create-withdrawals.dto';
 import { UpdateWithdrawalDto } from './dtos/update-withdrawals.dto';
 import { User } from '../schemas/users.schema';
+import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
 export class WithdrawalsService {
@@ -19,6 +20,7 @@ export class WithdrawalsService {
     private readonly withdrawalModel: Model<Withdrawal>,
     @InjectModel(User.name)
     private readonly usersModel: Model<User>,
+    private readonly notificationService: NotificationService,
   ) {}
 
   public async createWithdrawal(body: CreateWithdrawalDto, userId: string) {
@@ -32,6 +34,13 @@ export class WithdrawalsService {
       throw new NotFoundException('المستخدم غير موجود');
     }
 
+    await this.notificationService.create({
+      userId: user?._id.toString() || '',
+      title: 'تم إنشاء طلب سحب جديد 💸',
+      message:
+        'تم استلام طلب السحب الخاص بك، وسيتم مراجعته من قِبل الإدارة في أقرب وقت ممكن ',
+      type: 'withdrawal',
+    });
     // check if user still has withdrawal times left
     if (user.withdrawalTimes === 0) {
       throw new BadRequestException('رصيد مرات السحب المتاحة يساوي صفر');
@@ -46,9 +55,14 @@ export class WithdrawalsService {
 
     // decrement user's withdrawal times
     user.withdrawalTimes = user.withdrawalTimes - 1;
-
     await user.save();
 
+    await this.notificationService.create({
+      userId: user?._id.toString() || '',
+      title: 'تم إنشاء طلب سحب جديد 💸',
+      message: `تم استلام طلب السحب الخاص بك بقيمه ${body.amount}، وسيتم مراجعته من قِبل الإدارة في أقرب وقت ممكن `,
+      type: 'withdrawal',
+    });
     return {
       message: 'تم إنشاء عملية السحب بنجاح',
       data: withdrawal,

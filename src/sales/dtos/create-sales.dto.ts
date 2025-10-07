@@ -3,7 +3,11 @@ import { IsString, IsNumber, IsNotEmpty } from 'class-validator';
 export class CreateSalesDto {
   @IsString()
   @IsNotEmpty()
-  user_id: string;
+  sellerId: string;
+
+  @IsString()
+  @IsNotEmpty()
+  buyerId: string;
 
   @IsString()
   @IsNotEmpty()
@@ -36,8 +40,4 @@ export class CreateSalesDto {
   @IsString()
   @IsNotEmpty()
   platform_fee: string;
-
-  @IsString()
-  @IsNotEmpty()
-  buyerId: string;
 }

@@ -8,6 +8,7 @@ import response from '../utils/response.pattern';
 import { Sales } from '../schemas/sales.schema';
 import { Withdrawal } from '../schemas/withdrawal.schema';
 import { CompleteWithdrawalDto } from './dtos/completeWithdrawal.dto';
+import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
 export class DashboardService {
@@ -23,6 +24,7 @@ export class DashboardService {
 
     @InjectModel(Withdrawal.name)
     private readonly withdrawalModel: Model<Withdrawal>,
+    private readonly notificationService: NotificationService,
   ) {}
 
   /**
@@ -361,6 +363,18 @@ export class DashboardService {
     if (!updateNote) {
       throw new NotFoundException('الملاحظة غير موجودة');
     }
+    const user = await this.usersModel.findById(updateNote.owner_id).exec();
+    if (!user) {
+      throw new NotFoundException('المستخدم غير موجود');
+    }
+
+    await this.notificationService.create({
+      userId: user?._id.toString() || '',
+      title: 'تم نشر ملاحظة جديدة ',
+      message:
+        'تهانينا! تم نشر ملاحظتك بنجاح وهي الآن متاحة للطلاب الآخرين. شكرًا لمساهمتك في مجتمعنا التعليمي!',
+      type: 'notes',
+    });
     return response({
       message: 'تم نشر الملاحظة بنجاح',
       statusCode: 200,
@@ -377,6 +391,19 @@ export class DashboardService {
     if (!updateNote) {
       throw new NotFoundException('الملاحظة غير موجودة');
     }
+
+    const user = await this.usersModel.findById(updateNote.owner_id).exec();
+    if (!user) {
+      throw new NotFoundException('المستخدم غير موجود');
+    }
+
+    await this.notificationService.create({
+      userId: user?._id.toString() || '',
+      title: 'تم إلغاء نشر ملاحظة ',
+      message:
+        'تم إلغاء نشر ملاحظتك. إذا كان لديك أي أسئلة، يرجى التواصل مع الدعم.',
+      type: 'notes',
+    });
 
     return response({
       message: 'تم إلغاء نشر الملاحظة بنجاح',
@@ -598,6 +625,20 @@ export class DashboardService {
     if (!updateWithdrawal) {
       throw new NotFoundException('طلب السحب غير موجود');
     }
+    const user = await this.usersModel.findById(updateWithdrawal.userId).exec();
+
+    if (!user) {
+      throw new NotFoundException('المستخدم غير موجود');
+    }
+
+    await this.notificationService.create({
+      userId: user?._id.toString() || '',
+      title: 'تم قبول طلب سحب 💸',
+      message:
+        'تم قبول طلب السحب الخاص بك، وسيتم معالجة المبلغ في أقرب وقت ممكن.',
+      type: 'withdrawal',
+    });
+
     return response({
       message: 'تم قبول طلب السحب بنجاح',
       statusCode: 200,
@@ -610,6 +651,25 @@ export class DashboardService {
       { status: 'rejected' },
       { new: true },
     );
+    const withdrawal = await this.withdrawalModel.findById(id).exec();
+
+    if (!withdrawal) {
+      throw new NotFoundException('طلب السحب غير موجود');
+    }
+
+    const user = await this.usersModel.findById(withdrawal.userId).exec();
+
+    if (!user) {
+      throw new NotFoundException('المستخدم غير موجود');
+    }
+
+    await this.notificationService.create({
+      userId: user?._id.toString() || '',
+      title: 'تم رفض طلب سحب 💸',
+      message:
+        'تم رفض طلب السحب الخاص بك. إذا كان لديك أي أسئلة، يرجى التواصل مع الدعم.',
+      type: 'withdrawal',
+    });
 
     if (!updateWithdrawal) {
       throw new NotFoundException('طلب السحب غير موجود');
@@ -632,6 +692,24 @@ export class DashboardService {
     if (!updateWithdrawal) {
       throw new NotFoundException('طلب السحب غير موجود');
     }
+
+    const user = await this.usersModel.findById(updateWithdrawal.userId).exec();
+
+    if (!user) {
+      throw new NotFoundException('المستخدم غير موجود');
+    }
+
+    // update balance user and send notification
+    user.balance -= updateWithdrawal.amount;
+    await user.save();
+
+    await this.notificationService.create({
+      userId: user?._id.toString() || '',
+      title: 'تم إكمال طلب سحب 💸',
+      message: 'تم إكمال طلب السحب الخاص بك. يرجى التحقق من حسابك المصرفي.',
+      type: 'withdrawal',
+    });
+
     return response({
       message: 'تم قبول طلب السحب بنجاح',
       statusCode: 200,

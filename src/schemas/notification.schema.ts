@@ -16,7 +16,15 @@ export class Notification extends Document {
   read: boolean;
 
   @Prop({ default: 'info' })
-  type: 'info' | 'success' | 'warning' | 'error';
+  type:
+    | 'info'
+    | 'success'
+    | 'warning'
+    | 'error'
+    | 'withdrawal'
+    | 'sales'
+    | 'auth'
+    | 'notes';
 }
 
 export const NotificationSchema = SchemaFactory.createForClass(Notification);

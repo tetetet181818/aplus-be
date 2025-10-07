@@ -20,6 +20,7 @@ import {
 import { User } from 'src/schemas/users.schema';
 import axios from 'axios';
 import { ConfigService } from '@nestjs/config';
+import { NotificationService } from '../notification/notification.service';
 @Injectable()
 export class NotesService {
   constructor(
@@ -28,6 +29,7 @@ export class NotesService {
     @InjectModel(User.name)
     private readonly usersModel: Model<User>,
     private readonly config: ConfigService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   /** Create new note with comprehensive error handling */
@@ -225,6 +227,17 @@ export class NotesService {
     if (!deletedNote) {
       throw new NotFoundException('حدث خطأ أثناء الحذف');
     }
+    const user = await this.usersModel.findById(userId).select('fullName');
+
+    if (!user) {
+      throw new NotFoundException('المستخدم غير موجود');
+    }
+
+    await this.notificationService.create({
+      userId: user?._id.toString() || '',
+      title: 'تم حذف الملخص بنجاح 🎉',
+      message: `تم حذف الملخص "${note.title}" بنجاح. شكراً لك 🎉`,
+    });
 
     return response({
       message: 'تم حذف الملخص بنجاح',
@@ -296,6 +309,16 @@ export class NotesService {
 
     note.reviews.push(newReview);
     await note.save();
+    const user = await this.usersModel.findById(review.userId);
+
+    if (!user) {
+      throw new NotFoundException('المستخدم غير موجود');
+    }
+    await this.notificationService.create({
+      userId: user?._id.toString() || '',
+      title: 'تم إضافة تقييم جديد 🎉',
+      message: `تم إضافة تقييم جديدة للملخص "${note.title}"`,
+    });
 
     return response({
       message: 'تم إضافة المراجعة بنجاح',
@@ -349,6 +372,17 @@ export class NotesService {
     note.reviews = note.reviews.filter((item) => item._id !== reviewId);
     await note.save();
 
+    const user = await this.usersModel.findById(review.userId);
+
+    if (!user) {
+      throw new NotFoundException('المستخدم غير موجود');
+    }
+    await this.notificationService.create({
+      userId: user?._id.toString() || '',
+      title: 'تم حذف تقييم جديد',
+      message: `تم حذف تقييم للملخص "${note.title}`,
+    });
+
     return response({
       message: 'تم حذف المراجعة بنجاح',
       statusCode: 200,
@@ -374,9 +408,8 @@ export class NotesService {
       throw new BadRequestException('سعر الملخص غير صالح');
     }
 
-    // ✅ Prepare payment request
     const paymentPayload = {
-      amount: Math.round(note.price * 100), // convert to halalas
+      amount: Math.round(note.price * 100),
       currency: 'SAR',
       description: `شراء الملخص: ${note.title}`,
       callback_url: `${this.config.get<string>('APP_URL')}/payments/moyaser/callback`,
