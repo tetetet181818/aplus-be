@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsNumber } from 'class-validator';
+import { IsString, IsOptional, IsNumber } from 'class-validator';
 
 export class UpdateNoteDto {
   @IsOptional()
@@ -6,7 +6,7 @@ export class UpdateNoteDto {
   contact_method?: string;
 
   @IsString()
-  @IsNotEmpty({ message: '📌 العنوان مطلوب' })
+  @IsOptional()
   title?: string;
 
   @IsOptional()
@@ -14,7 +14,7 @@ export class UpdateNoteDto {
   description?: string;
 
   @IsNumber()
-  @IsNotEmpty({ message: '💰 السعر مطلوب' })
+  @IsOptional()
   price?: number;
 
   @IsOptional()
