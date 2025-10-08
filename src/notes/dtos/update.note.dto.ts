@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsNumber } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsBoolean } from 'class-validator';
 
 export class UpdateNoteDto {
   @IsOptional()
@@ -36,4 +36,15 @@ export class UpdateNoteDto {
   @IsOptional()
   @IsString()
   university?: string;
+
+  @IsOptional()
+  pagesNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  contactMethod;
+
+  @IsOptional()
+  @IsBoolean()
+  isPublish;
 }
