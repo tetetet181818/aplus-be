@@ -24,6 +24,7 @@ import { NotificationService } from '../notification/notification.service';
 import { Response } from 'express';
 import { SalesService } from '../sales/sales.service';
 import { PLATFORM_FREE } from '../utils/constants';
+import { UpdateNoteDto } from './dtos/update.note.dto';
 @Injectable()
 export class NotesService {
   constructor(
@@ -587,6 +588,36 @@ export class NotesService {
     } catch (err) {
       throw new NotFoundException('File not found or download failed.');
     }
+  }
+
+  public async updateNote(noteId: string, body: UpdateNoteDto, userId: string) {
+    const note = await this.noteModel.findById(noteId);
+
+    if (!note) {
+      throw new NotFoundException('عذرًا، لم يتم العثور على الملاحظة المطلوبة');
+    }
+
+    if (note.owner_id !== userId) {
+      throw new UnauthorizedException(
+        'عذرًا، لا تملك صلاحية لتعديل هذه الملاحظة',
+      );
+    }
+
+    const updatedNote = await this.noteModel
+      .findByIdAndUpdate(noteId, body, { new: true })
+      .exec();
+
+    if (!updatedNote) {
+      throw new NotFoundException(
+        'حدث خطأ أثناء تحديث الملاحظة، حاول مرة أخرى',
+      );
+    }
+
+    return response({
+      message: 'تم تحديث الملاحظة بنجاح',
+      data: updatedNote,
+      statusCode: 200,
+    });
   }
 
   private async uploadImage(
