@@ -21,7 +21,15 @@ export class NotificationService {
     userId: string;
     title: string;
     message: string;
-    type?: 'info' | 'success' | 'warning' | 'error';
+    type?:
+      | 'info'
+      | 'success'
+      | 'warning'
+      | 'error'
+      | 'withdrawal'
+      | 'sales'
+      | 'auth'
+      | 'notes';
   }) {
     const notification = await this.notificationModel.create({
       userId,

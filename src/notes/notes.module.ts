@@ -9,6 +9,8 @@ import { JwtModule } from '@nestjs/jwt';
 import { MulterModule } from '@nestjs/platform-express';
 import { CloudinaryConfig } from '../cloudinary/cloudinary.config';
 import { UserSchema } from '../schemas/users.schema';
+import { NotificationModule } from '../notification/notification.module';
+import { SalesModule } from '../sales/sales.module';
 
 @Module({
   controllers: [NotesController],
@@ -35,6 +37,8 @@ import { UserSchema } from '../schemas/users.schema';
       limits: { fileSize: 10 * 1024 * 1024 },
     }),
     MailModule,
+    NotificationModule,
+    SalesModule,
   ],
 })
 export class NotesModule {

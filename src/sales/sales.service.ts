@@ -4,12 +4,14 @@ import { Model } from 'mongoose';
 import { Sales } from '../schemas/sales.schema';
 import response from '../utils/response.pattern';
 import { CreateSalesDto } from './dtos/create-sales.dto';
+import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
 export class SalesService {
   constructor(
     @InjectModel('Sales')
     private readonly salesModel: Model<Sales>,
+    private readonly notificationService: NotificationService,
   ) {}
 
   /** create sale */
@@ -20,8 +22,24 @@ export class SalesService {
       throw new NotFoundException('حدث خطأ أثناء إنشاء المبيعات');
     }
 
+    await this.notificationService.create({
+      userId: sale.sellerId.toString(),
+      title: '💰 تم بيع أحد ملخّصاتك!',
+      message:
+        'مبروك! تم شراء أحد ملخّصاتك بنجاح، نتمنى لك المزيد من المبيعات 🎉',
+      type: 'sales',
+    });
+
+    await this.notificationService.create({
+      userId: sale.buyerId.toString(),
+      title: '🎉 تهانينا! تم شراء الملخّص الخاص بك',
+      message:
+        'تمت عملية الشراء بنجاح، نتمنى لك تجربة مفيدة وممتعة مع ملخّصك الجديد 📚',
+      type: 'sales',
+    });
+
     return response({
-      message: 'تم إنشاء المبيعات بنجاح',
+      message: 'تم إنشاء المبيعات بنجاح ',
       data: sale,
       statusCode: 201,
     });

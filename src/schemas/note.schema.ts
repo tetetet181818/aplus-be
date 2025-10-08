@@ -56,7 +56,7 @@ export class Note {
   @Prop({ type: String, required: true })
   owner_id: string;
 
-  @Prop({ type: Number, required: true })
+  @Prop({ type: Number, required: false })
   pagesNumber: number;
 
   @Prop({ type: Number, required: true })

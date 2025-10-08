@@ -4,7 +4,10 @@ import { Document } from 'mongoose';
 @Schema({ timestamps: true })
 export class Sales extends Document {
   @Prop({ type: String, required: true })
-  user_id: string;
+  sellerId: string;
+
+  @Prop({ type: String, required: true })
+  buyerId: string;
 
   @Prop({ type: String, required: true })
   note_id: string;
@@ -29,9 +32,6 @@ export class Sales extends Document {
 
   @Prop({ type: String, required: true })
   platform_fee: string;
-
-  @Prop({ type: String, required: true })
-  buyerId: string;
 }
 
 export const SalesSchema = SchemaFactory.createForClass(Sales);

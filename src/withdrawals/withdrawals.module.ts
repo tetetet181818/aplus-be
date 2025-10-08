@@ -7,6 +7,7 @@ import { MailModule } from '../mail/mail.module';
 import { WithdrawalSchema } from '../schemas/withdrawal.schema';
 import { JwtModule } from '@nestjs/jwt';
 import { UserSchema } from '../schemas/users.schema';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   controllers: [WithdrawalsController],
@@ -30,6 +31,7 @@ import { UserSchema } from '../schemas/users.schema';
       },
     }),
     MailModule,
+    NotificationModule,
   ],
 })
 export class WithdrawalsModule {}

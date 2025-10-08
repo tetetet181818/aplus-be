@@ -8,6 +8,7 @@ import response from '../utils/response.pattern';
 import { Sales } from '../schemas/sales.schema';
 import { Withdrawal } from '../schemas/withdrawal.schema';
 import { CompleteWithdrawalDto } from './dtos/completeWithdrawal.dto';
+import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
 export class DashboardService {
@@ -23,6 +24,7 @@ export class DashboardService {
 
     @InjectModel(Withdrawal.name)
     private readonly withdrawalModel: Model<Withdrawal>,
+    private readonly notificationService: NotificationService,
   ) {}
 
   /**
@@ -111,23 +113,50 @@ export class DashboardService {
   }
 
   /** Get all users with pagination */
-  public async getAllUsers(page: number, limit: number) {
+  public async getAllUsers(
+    page = 1,
+    limit = 10,
+    university?: string,
+    fullName?: string,
+    email?: string,
+    sortBy: string = 'createdAt',
+    sortOrder: 'asc' | 'desc' = 'desc',
+  ) {
     // Ensure positive integers
     const currentPage = Math.max(1, page);
     const pageSize = Math.max(1, limit);
-
-    // Calculate skip
     const skip = (currentPage - 1) * pageSize;
 
-    // Fetch total count (for total pages)
-    const totalItems = await this.usersModel.countDocuments().exec();
+    // Build dynamic filters
+    const filters: Record<string, any> = {};
 
-    // Fetch paginated users
+    if (university) {
+      filters.university = { $regex: university, $options: 'i' }; // partial match, case-insensitive
+    }
+
+    if (fullName) {
+      filters.fullName = { $regex: fullName, $options: 'i' };
+    }
+
+    if (email) {
+      filters.email = { $regex: email, $options: 'i' };
+    }
+
+    // Build sorting dynamically
+    const sortOptions: Record<string, 1 | -1> = {
+      [sortBy]: sortOrder === 'asc' ? 1 : -1,
+    };
+
+    // Fetch total count for pagination
+    const totalItems = await this.usersModel.countDocuments(filters);
+
+    // Fetch paginated, filtered, sorted users
     const users = await this.usersModel
-      .find()
-      .sort({ createdAt: -1 }) // optional: newest first
+      .find(filters)
+      .sort(sortOptions)
       .skip(skip)
       .limit(pageSize)
+      .select('-password')
       .exec();
 
     return response({
@@ -280,16 +309,46 @@ export class DashboardService {
     };
   }
 
-  async getAllNotes(page: number, limit: number) {
+  async getAllNotes(
+    page: number,
+    limit: number,
+    title: string,
+    university: string,
+    collage: string,
+    year: string,
+    sortBy,
+    sortOrder,
+  ) {
     // Ensure positive integers
     const currentPage = Math.max(1, page);
     const pageSize = Math.max(1, limit);
 
+    const filters: Record<string, any> = {};
+
+    if (title) {
+      filters.title = { $regex: title, $options: 'i' };
+    }
+
+    if (university) {
+      filters.university = { $regex: university, $options: 'i' };
+    }
+
+    if (collage) {
+      filters.collage = { $regex: collage, $options: 'i' };
+    }
+
+    if (year) {
+      filters.year = { $regex: year, $options: 'i' };
+    }
+    const sortOptions: Record<string, 1 | -1> = {
+      [sortBy]: sortOrder === 'asc' ? 1 : -1,
+    };
+
     // Calculate skip
     const skip = (currentPage - 1) * pageSize;
     const notes = await this.noteModel
-      .find()
-      .sort({ createdAt: -1 })
+      .find(filters)
+      .sort(sortOptions)
       .skip(skip)
       .limit(pageSize)
       .exec();
@@ -361,6 +420,18 @@ export class DashboardService {
     if (!updateNote) {
       throw new NotFoundException('الملاحظة غير موجودة');
     }
+    const user = await this.usersModel.findById(updateNote.owner_id).exec();
+    if (!user) {
+      throw new NotFoundException('المستخدم غير موجود');
+    }
+
+    await this.notificationService.create({
+      userId: user?._id.toString() || '',
+      title: 'تم نشر ملاحظة جديدة ',
+      message:
+        'تهانينا! تم نشر ملاحظتك بنجاح وهي الآن متاحة للطلاب الآخرين. شكرًا لمساهمتك في مجتمعنا التعليمي!',
+      type: 'notes',
+    });
     return response({
       message: 'تم نشر الملاحظة بنجاح',
       statusCode: 200,
@@ -377,6 +448,19 @@ export class DashboardService {
     if (!updateNote) {
       throw new NotFoundException('الملاحظة غير موجودة');
     }
+
+    const user = await this.usersModel.findById(updateNote.owner_id).exec();
+    if (!user) {
+      throw new NotFoundException('المستخدم غير موجود');
+    }
+
+    await this.notificationService.create({
+      userId: user?._id.toString() || '',
+      title: 'تم إلغاء نشر ملاحظة ',
+      message:
+        'تم إلغاء نشر ملاحظتك. إذا كان لديك أي أسئلة، يرجى التواصل مع الدعم.',
+      type: 'notes',
+    });
 
     return response({
       message: 'تم إلغاء نشر الملاحظة بنجاح',
@@ -466,20 +550,65 @@ export class DashboardService {
     };
   }
 
-  async getAllWithdrawals(page: number, limit: number) {
-    // Ensure positive integers
+  async getAllWithdrawals(
+    page = 1,
+    limit = 10,
+    status?: string,
+    iban?: string,
+    startDate?: string,
+    endDate?: string,
+    sortBy: string = 'createdAt',
+    sortOrder: 'asc' | 'desc' = 'desc',
+  ) {
+    // Validate pagination inputs
     const currentPage = Math.max(1, page);
     const pageSize = Math.max(1, limit);
-
-    // Calculate skip
     const skip = (currentPage - 1) * pageSize;
-    const withdrawals = await this.withdrawalModel
-      .find()
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(pageSize)
-      .exec();
-    const totalItems = await this.withdrawalModel.countDocuments().exec();
+
+    // ====== Filters ======
+    const filters: Record<string, any> = {};
+
+    if (status && status !== 'all') {
+      filters.status = status;
+    }
+
+    if (iban) {
+      filters.iban = { $regex: iban, $options: 'i' }; // partial match, case-insensitive
+    }
+
+    // Date range filter
+    if (startDate || endDate) {
+      filters.createdAt = {};
+      if (startDate) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        filters.createdAt.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        // Add 1 day to endDate to include that full day
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        filters.createdAt.$lte = end;
+      }
+    }
+
+    // ====== Sorting ======
+    const sortOptions: Record<string, 1 | -1> = {
+      [sortBy]: sortOrder === 'asc' ? 1 : -1,
+    };
+
+    // ====== Query ======
+    const [withdrawals, totalItems] = await Promise.all([
+      this.withdrawalModel
+        .find(filters)
+        .sort(sortOptions)
+        .skip(skip)
+        .limit(pageSize)
+        .exec(),
+      this.withdrawalModel.countDocuments(filters).exec(),
+    ]);
+
+    // ====== Response ======
     return {
       message: 'Withdrawals fetched successfully',
       data: {
@@ -598,6 +727,20 @@ export class DashboardService {
     if (!updateWithdrawal) {
       throw new NotFoundException('طلب السحب غير موجود');
     }
+    const user = await this.usersModel.findById(updateWithdrawal.userId).exec();
+
+    if (!user) {
+      throw new NotFoundException('المستخدم غير موجود');
+    }
+
+    await this.notificationService.create({
+      userId: user?._id.toString() || '',
+      title: 'تم قبول طلب سحب 💸',
+      message:
+        'تم قبول طلب السحب الخاص بك، وسيتم معالجة المبلغ في أقرب وقت ممكن.',
+      type: 'withdrawal',
+    });
+
     return response({
       message: 'تم قبول طلب السحب بنجاح',
       statusCode: 200,
@@ -610,6 +753,25 @@ export class DashboardService {
       { status: 'rejected' },
       { new: true },
     );
+    const withdrawal = await this.withdrawalModel.findById(id).exec();
+
+    if (!withdrawal) {
+      throw new NotFoundException('طلب السحب غير موجود');
+    }
+
+    const user = await this.usersModel.findById(withdrawal.userId).exec();
+
+    if (!user) {
+      throw new NotFoundException('المستخدم غير موجود');
+    }
+
+    await this.notificationService.create({
+      userId: user?._id.toString() || '',
+      title: 'تم رفض طلب سحب 💸',
+      message:
+        'تم رفض طلب السحب الخاص بك. إذا كان لديك أي أسئلة، يرجى التواصل مع الدعم.',
+      type: 'withdrawal',
+    });
 
     if (!updateWithdrawal) {
       throw new NotFoundException('طلب السحب غير موجود');
@@ -632,6 +794,24 @@ export class DashboardService {
     if (!updateWithdrawal) {
       throw new NotFoundException('طلب السحب غير موجود');
     }
+
+    const user = await this.usersModel.findById(updateWithdrawal.userId).exec();
+
+    if (!user) {
+      throw new NotFoundException('المستخدم غير موجود');
+    }
+
+    // update balance user and send notification
+    user.balance -= updateWithdrawal.amount;
+    await user.save();
+
+    await this.notificationService.create({
+      userId: user?._id.toString() || '',
+      title: 'تم إكمال طلب سحب 💸',
+      message: 'تم إكمال طلب السحب الخاص بك. يرجى التحقق من حسابك المصرفي.',
+      type: 'withdrawal',
+    });
+
     return response({
       message: 'تم قبول طلب السحب بنجاح',
       statusCode: 200,
