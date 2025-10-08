@@ -4,7 +4,6 @@
   "compilerOptions": {
     "outDir": "./dist",
     "esModuleInterop": true,
-    "skipLibCheck": true,
-    "types": ["node", "express", "multer"]
+    "skipLibCheck": true
   }
 }
