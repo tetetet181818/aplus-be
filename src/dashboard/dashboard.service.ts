@@ -113,23 +113,50 @@ export class DashboardService {
   }
 
   /** Get all users with pagination */
-  public async getAllUsers(page: number, limit: number) {
+  public async getAllUsers(
+    page = 1,
+    limit = 10,
+    university?: string,
+    fullName?: string,
+    email?: string,
+    sortBy: string = 'createdAt',
+    sortOrder: 'asc' | 'desc' = 'desc',
+  ) {
     // Ensure positive integers
     const currentPage = Math.max(1, page);
     const pageSize = Math.max(1, limit);
-
-    // Calculate skip
     const skip = (currentPage - 1) * pageSize;
 
-    // Fetch total count (for total pages)
-    const totalItems = await this.usersModel.countDocuments().exec();
+    // Build dynamic filters
+    const filters: Record<string, any> = {};
 
-    // Fetch paginated users
+    if (university) {
+      filters.university = { $regex: university, $options: 'i' }; // partial match, case-insensitive
+    }
+
+    if (fullName) {
+      filters.fullName = { $regex: fullName, $options: 'i' };
+    }
+
+    if (email) {
+      filters.email = { $regex: email, $options: 'i' };
+    }
+
+    // Build sorting dynamically
+    const sortOptions: Record<string, 1 | -1> = {
+      [sortBy]: sortOrder === 'asc' ? 1 : -1,
+    };
+
+    // Fetch total count for pagination
+    const totalItems = await this.usersModel.countDocuments(filters);
+
+    // Fetch paginated, filtered, sorted users
     const users = await this.usersModel
-      .find()
-      .sort({ createdAt: -1 }) // optional: newest first
+      .find(filters)
+      .sort(sortOptions)
       .skip(skip)
       .limit(pageSize)
+      .select('-password')
       .exec();
 
     return response({
@@ -282,16 +309,46 @@ export class DashboardService {
     };
   }
 
-  async getAllNotes(page: number, limit: number) {
+  async getAllNotes(
+    page: number,
+    limit: number,
+    title: string,
+    university: string,
+    collage: string,
+    year: string,
+    sortBy,
+    sortOrder,
+  ) {
     // Ensure positive integers
     const currentPage = Math.max(1, page);
     const pageSize = Math.max(1, limit);
 
+    const filters: Record<string, any> = {};
+
+    if (title) {
+      filters.title = { $regex: title, $options: 'i' };
+    }
+
+    if (university) {
+      filters.university = { $regex: university, $options: 'i' };
+    }
+
+    if (collage) {
+      filters.collage = { $regex: collage, $options: 'i' };
+    }
+
+    if (year) {
+      filters.year = { $regex: year, $options: 'i' };
+    }
+    const sortOptions: Record<string, 1 | -1> = {
+      [sortBy]: sortOrder === 'asc' ? 1 : -1,
+    };
+
     // Calculate skip
     const skip = (currentPage - 1) * pageSize;
     const notes = await this.noteModel
-      .find()
-      .sort({ createdAt: -1 })
+      .find(filters)
+      .sort(sortOptions)
       .skip(skip)
       .limit(pageSize)
       .exec();
@@ -493,20 +550,65 @@ export class DashboardService {
     };
   }
 
-  async getAllWithdrawals(page: number, limit: number) {
-    // Ensure positive integers
+  async getAllWithdrawals(
+    page = 1,
+    limit = 10,
+    status?: string,
+    iban?: string,
+    startDate?: string,
+    endDate?: string,
+    sortBy: string = 'createdAt',
+    sortOrder: 'asc' | 'desc' = 'desc',
+  ) {
+    // Validate pagination inputs
     const currentPage = Math.max(1, page);
     const pageSize = Math.max(1, limit);
-
-    // Calculate skip
     const skip = (currentPage - 1) * pageSize;
-    const withdrawals = await this.withdrawalModel
-      .find()
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(pageSize)
-      .exec();
-    const totalItems = await this.withdrawalModel.countDocuments().exec();
+
+    // ====== Filters ======
+    const filters: Record<string, any> = {};
+
+    if (status && status !== 'all') {
+      filters.status = status;
+    }
+
+    if (iban) {
+      filters.iban = { $regex: iban, $options: 'i' }; // partial match, case-insensitive
+    }
+
+    // Date range filter
+    if (startDate || endDate) {
+      filters.createdAt = {};
+      if (startDate) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        filters.createdAt.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        // Add 1 day to endDate to include that full day
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        filters.createdAt.$lte = end;
+      }
+    }
+
+    // ====== Sorting ======
+    const sortOptions: Record<string, 1 | -1> = {
+      [sortBy]: sortOrder === 'asc' ? 1 : -1,
+    };
+
+    // ====== Query ======
+    const [withdrawals, totalItems] = await Promise.all([
+      this.withdrawalModel
+        .find(filters)
+        .sort(sortOptions)
+        .skip(skip)
+        .limit(pageSize)
+        .exec(),
+      this.withdrawalModel.countDocuments(filters).exec(),
+    ]);
+
+    // ====== Response ======
     return {
       message: 'Withdrawals fetched successfully',
       data: {

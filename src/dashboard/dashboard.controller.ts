@@ -24,10 +24,22 @@ export class DashboardController {
 
   @Get('/users')
   @UseGuards(AuthGuard)
-  getAllUsers(@Query('page') page?: string, @Query('limit') limit?: string) {
+  getAllUsers(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('university') university?: string,
+    @Query('fullName') fullName?: string,
+    @Query('email') email?: string,
+  ) {
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 10;
-    return this.dashboardService.getAllUsers(pageNum, limitNum);
+    return this.dashboardService.getAllUsers(
+      pageNum,
+      limitNum,
+      university,
+      fullName,
+      email,
+    );
   }
 
   @Delete('/users/:id')
@@ -65,10 +77,28 @@ export class DashboardController {
 
   @Get('/notes')
   @UseGuards(AuthGuard)
-  getAllNotes(@Query('page') page?: string, @Query('limit') limit?: string) {
+  getAllNotes(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('university') university?: string,
+    @Query('collage') collage?: string,
+    @Query('year') year?: string,
+    @Query('title') title?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: string,
+  ) {
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 10;
-    return this.dashboardService.getAllNotes(pageNum, limitNum);
+    return this.dashboardService.getAllNotes(
+      pageNum,
+      limitNum,
+      title || '',
+      university || '',
+      collage || '',
+      year || '',
+      sortBy || 'createdAt',
+      sortOrder || 'desc',
+    );
   }
 
   @Get('/notes/stats')
@@ -114,10 +144,21 @@ export class DashboardController {
   getAllWithdrawals(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('status') status?: string,
+    @Query('iban') iban?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
   ) {
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 10;
-    return this.dashboardService.getAllWithdrawals(pageNum, limitNum);
+    return this.dashboardService.getAllWithdrawals(
+      pageNum,
+      limitNum,
+      status,
+      iban,
+      startDate,
+      endDate,
+    );
   }
 
   @Get('/withdrawals/stats')
