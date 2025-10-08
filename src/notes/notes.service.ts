@@ -25,7 +25,7 @@ import { Response } from 'express';
 import { SalesService } from '../sales/sales.service';
 import { PLATFORM_FREE } from '../utils/constants';
 import { UpdateNoteDto } from './dtos/update.note.dto';
-import { Express } from 'express';
+import { File } from 'buffer';
 @Injectable()
 export class NotesService {
   constructor(
@@ -42,8 +42,8 @@ export class NotesService {
   public async createNote(
     body: CreateNoteDto,
     userId: string,
-    image?: Express.Multer.File,
-    file?: Express.Multer.File,
+    image?: File,
+    file?: File,
   ) {
     try {
       if (!userId) {
@@ -624,9 +624,7 @@ export class NotesService {
     });
   }
 
-  private async uploadImage(
-    file: Express.Multer.File,
-  ): Promise<UploadApiResponse> {
+  private async uploadImage(file: File): Promise<UploadApiResponse> {
     return new Promise<UploadApiResponse>((resolve, reject) => {
       cloudinary.uploader
         .upload_stream(
@@ -648,13 +646,11 @@ export class NotesService {
             resolve(result);
           },
         )
-        .end(file.buffer);
+        .end(file);
     });
   }
 
-  private async uploadFile(
-    file: Express.Multer.File,
-  ): Promise<UploadApiResponse> {
+  private async uploadFile(file: File): Promise<UploadApiResponse> {
     return new Promise<UploadApiResponse>((resolve, reject) => {
       cloudinary.uploader
         .upload_stream(
@@ -676,7 +672,7 @@ export class NotesService {
             resolve(result);
           },
         )
-        .end(file.buffer);
+        .end(file);
     });
   }
 }

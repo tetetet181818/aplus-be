@@ -23,7 +23,7 @@ import { UpdateReviewDto } from './dtos/update-review.dto';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
 import { UpdateNoteDto } from './dtos/update.note.dto';
-import { Express } from 'express';
+import { File } from 'buffer';
 @Controller('/api/v1/notes')
 export class NotesController {
   constructor(private readonly notesService: NotesService) {}
@@ -93,20 +93,20 @@ export class NotesController {
       { name: 'cover', maxCount: 1 },
     ]),
   )
-  public createNote(
+  public async createNote(
     @Body() body: CreateNoteDto,
     @CurrentUser() payload: JwtPayload,
     @UploadedFiles()
     files: {
-      file?: Express.Multer.File[];
-      cover?: Express.Multer.File[];
+      file?: File[];
+      cover?: File[];
     },
   ) {
-    const pdf = files.file?.[0];
-    const image = files.cover?.[0];
+    const pdf = files?.file?.[0];
+    const image = files?.cover?.[0];
+
     return this.notesService.createNote(body, payload.id, image, pdf);
   }
-
   @Put('/update/:id')
   @UseGuards(AuthGuard)
   public updateNote(
