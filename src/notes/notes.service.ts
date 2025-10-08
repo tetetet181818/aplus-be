@@ -25,6 +25,7 @@ import { Response } from 'express';
 import { SalesService } from '../sales/sales.service';
 import { PLATFORM_FREE } from '../utils/constants';
 import { UpdateNoteDto } from './dtos/update.note.dto';
+import { Express } from 'express';
 @Injectable()
 export class NotesService {
   constructor(
