@@ -434,6 +434,9 @@ export class NotesService {
       { $push: { purchased_by: userId } },
     );
 
+    note.downloads += 1;
+    await note.save();
+
     if (!updateNote) {
       throw new NotFoundException('حدث خطاء اثناء شراء الملخص');
     }
