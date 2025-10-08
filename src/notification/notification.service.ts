@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Notification } from '../schemas/notification.schema';
-import response from 'src/utils/response.pattern';
+import response from '../utils/response.pattern';
 
 @Injectable()
 export class NotificationService {
