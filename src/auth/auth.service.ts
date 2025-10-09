@@ -21,6 +21,17 @@ import { randomBytes } from 'node:crypto';
 import { ResetPasswordDto } from './dtos/reset-password.dto';
 import { Note } from '../schemas/note.schema';
 import { NotificationService } from '../notification/notification.service';
+import { Request } from 'express';
+
+interface GoogleUser {
+  email: string;
+  firstName: string;
+  lastName: string;
+}
+
+interface GoogleAuthRequest extends Request {
+  user: GoogleUser;
+}
 
 /**
  * Temporary payload stored inside the verification token.
@@ -344,8 +355,63 @@ export class AuthService {
       statusCode: 200,
       data: {
         user,
-        notes: notes.length > 0 ? notes : [],
+        notes,
       },
+    });
+  }
+
+  public googleLogin(req: Request) {
+    if (!req.user) {
+      return 'No user from Google';
+    }
+
+    const payload = {
+      email: (req as GoogleAuthRequest).user.email,
+      fullName: `${(req as GoogleAuthRequest).user.firstName} ${(req as GoogleAuthRequest).user.lastName}`,
+    };
+    const token = this.jwtService.sign(payload);
+
+    return response({
+      message: 'User authenticated successfully',
+      data: req.user,
+      token,
+      statusCode: 200,
+    });
+  }
+
+  public async getAllUsers(page: number, limit: number, fullName: string) {
+    const currentPage = Math.max(1, page);
+    const pageSize = Math.max(1, limit);
+    const skip = (currentPage - 1) * pageSize;
+
+    const filters: Record<string, any> = {};
+
+    if (fullName) {
+      filters.fullName = { $regex: fullName, $options: 'i' };
+    }
+
+    const users = await this.userModel
+      .find(filters)
+      .skip(skip)
+      .limit(pageSize)
+      .select('_id fullName email')
+      .lean();
+
+    const totalUsers = await this.userModel.countDocuments().exec();
+    return response({
+      message: 'Users fetched successfully',
+      data: {
+        data: users,
+        pagnation: {
+          totalItems: totalUsers,
+          currentPage,
+          pageSize,
+          totalPages: Math.ceil(totalUsers / pageSize),
+          hasNextPage: currentPage * pageSize < totalUsers,
+          hasPrevPage: currentPage > 1,
+        },
+      },
+      statusCode: 200,
     });
   }
 

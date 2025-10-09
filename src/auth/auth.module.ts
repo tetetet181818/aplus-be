@@ -8,10 +8,11 @@ import { UserSchema } from '../schemas/users.schema';
 import { MailModule } from '../mail/mail.module';
 import { NoteSchema } from '../schemas/note.schema';
 import { NotificationModule } from '../notification/notification.module';
+import { GoogleStrategy } from '../strategies/google.strategy';
 
 @Module({
   controllers: [AuthController],
-  providers: [AuthService],
+  providers: [AuthService, GoogleStrategy],
   imports: [
     ConfigModule,
     MongooseModule.forFeature([

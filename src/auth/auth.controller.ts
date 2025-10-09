@@ -9,6 +9,7 @@ import {
   Put,
   UseGuards,
   Param,
+  Req,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dtos/register.dto';
@@ -19,7 +20,7 @@ import { UpdateUserDto } from './dtos/update-user.dto';
 import { AuthGuard } from './guards/auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
 import type { JwtPayload } from '../utils/types';
-
+import type { Request } from 'express';
 @Controller('/api/v1/auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -79,9 +80,31 @@ export class AuthController {
     return this.authService.updateUser(payload.id, body);
   }
 
+  @Get('/all-users')
+  public getAllUsers(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('fullName') fullName?: string,
+  ) {
+    const pageNum = page ? parseInt(page, 10) : 1;
+    const limitNum = limit ? parseInt(limit, 10) : 10;
+    return this.authService.getAllUsers(pageNum, limitNum, fullName || '');
+  }
+
   @Get('/:id')
   @UseGuards(AuthGuard)
   public getUserById(@Param('id') id: string) {
     return this.authService.getUserById(id);
+  }
+
+  @Get('/google')
+  async googleAuth() {
+    // Redirects to Google automatically
+  }
+
+  // Step 2: Handle callback
+  @Get('/google/redirect')
+  googleAuthRedirect(@Req() req: Request) {
+    return this.authService.googleLogin(req);
   }
 }
