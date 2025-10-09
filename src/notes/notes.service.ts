@@ -133,14 +133,20 @@ export class NotesService {
   }
 
   /**
-   * Fetch all notes with pagination and sorting
-   * @param page - Current page number (default: 1)
-   * @param limit - Number of items per page (default: 10)
-   * @param sortBy - Field to sort by (default: createdAt)
-   * @param sortOrder - Sort order: asc or desc (default: desc)
-   * @returns Paginated notes with metadata
+   * Retrieves all notes with optional filtering, pagination, and sorting.
+   * Can sort primarily by maxDownloads, maxPrice, or minPrice.
+   *
+   * @param {number} page - The current page number.
+   * @param {number} limit - The number of items per page.
+   * @param {string} sortBy - The field to sort by (default: createdAt).
+   * @param {'asc'|'desc'} sortOrder - The sort order (default: desc).
+   * @param {string} [university] - Optional filter by university.
+   * @param {string} [college] - Optional filter by college.
+   * @param {string} [year] - Optional filter by year.
+   * @param {boolean} [maxDownloads] - Sort primarily by highest downloads.
+   * @param {boolean} [maxPrice] - Sort primarily by highest price.
+   * @param {boolean} [minPrice] - Sort primarily by lowest price.
    */
-
   public async getAllNotes(
     page: number = 1,
     limit: number = 10,
@@ -149,10 +155,13 @@ export class NotesService {
     university?: string,
     college?: string,
     year?: string,
+    maxDownloads: boolean = false,
+    maxPrice: boolean = false,
+    minPrice: boolean = false,
   ) {
     const skip = (page - 1) * limit;
 
-    // ===== Allowed sort fields =====
+    // Define allowed sort fields
     const sortOptions: Record<string, string> = {
       price: 'price',
       year: 'year',
@@ -163,24 +172,41 @@ export class NotesService {
     const sortField = sortOptions[sortBy] || 'createdAt';
     const sortDirection = sortOrder === 'asc' ? 1 : -1;
 
+    // Build filters
     const filters: Record<string, any> = {};
+    if (university) filters.university = university;
+    if (college) filters.college = college;
+    if (year) filters.year = year;
 
-    if (university) filters['university'] = university;
-    if (college) filters['college'] = college;
-    if (year) filters['year'] = year;
+    // Build sorting object with priority logic
+    let sort: Record<string, 1 | -1>;
+    if (maxDownloads) {
+      sort = { downloads: -1, [sortField]: sortDirection };
+    } else if (maxPrice) {
+      sort = { price: 1, [sortField]: sortDirection };
+    } else if (minPrice) {
+      sort = { price: -1, [sortField]: sortDirection };
+    } else {
+      sort = { [sortField]: sortDirection };
+    }
 
     const [notes, total] = await Promise.all([
-      this.noteModel
-        .find(filters)
-        .sort({ [sortField]: sortDirection })
-        .skip(skip)
-        .limit(limit)
-        .lean(),
+      this.noteModel.find(filters).sort(sort).skip(skip).limit(limit).lean(),
       this.noteModel.countDocuments(filters),
     ]);
 
     if (!notes || notes.length === 0) {
-      throw new NotFoundException('لا توجد ملخصات مطابقة للبحث.');
+      return {
+        message: 'لا توجد ملخصات مطابقة للبحث.',
+        statusCode: 200,
+        data: [],
+        pagination: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        },
+      };
     }
 
     return {
