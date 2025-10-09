@@ -45,11 +45,9 @@ export class NotesController {
     @Query('university') university: string,
     @Query('collage') collage: string,
     @Query('year') year: string,
-    // @Query('query') query: string,
-    // @Query('minDownloads') minDownloads: number,
-    // @Query('maxDownloads') maxDownloads: number,
-    // @Query('minPrice') minPrice: number,
-    // @Query('maxPrice') maxPrice: number,
+    @Query('maxDownloads') maxDownloads: boolean,
+    @Query('minPrice') minPrice: boolean,
+    @Query('maxPrice') maxPrice: boolean,
   ) {
     return this.notesService.getAllNotes(
       page,
@@ -59,11 +57,9 @@ export class NotesController {
       university,
       collage,
       year,
-      // query,
-      // minDownloads,
-      // maxDownloads,
-      // minPrice,
-      // maxPrice,
+      maxDownloads,
+      minPrice,
+      maxPrice,
     );
   }
 
