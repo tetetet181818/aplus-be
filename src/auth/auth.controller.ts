@@ -22,7 +22,7 @@ import { AuthGuard } from './guards/auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
 import type { JwtPayload } from '../utils/types';
 import type { GoogleAuthRequest } from '../utils/types';
-import { GoogleAuthGuard } from 'src/guards/google-auth.guard';
+import { GoogleAuthGuard } from '../guards/google-auth.guard';
 import type { Response } from 'express';
 import { ConfigService } from '@nestjs/config';
 @Controller('/api/v1/auth')
