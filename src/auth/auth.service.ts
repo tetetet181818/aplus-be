@@ -13,7 +13,7 @@ import { RegisterDto } from './dtos/register.dto';
 import response from '../utils/response.pattern';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
-import { JwtPayload, RegisterPayload } from '../utils/types';
+import { GoogleAuthRequest, JwtPayload, RegisterPayload } from '../utils/types';
 import { LoginDto } from './dtos/login.dto';
 import { MailService } from '../mail/mail.service';
 import { UpdateUserDto } from './dtos/update-user.dto';
@@ -21,17 +21,6 @@ import { randomBytes } from 'node:crypto';
 import { ResetPasswordDto } from './dtos/reset-password.dto';
 import { Note } from '../schemas/note.schema';
 import { NotificationService } from '../notification/notification.service';
-import { Request } from 'express';
-
-interface GoogleUser {
-  email: string;
-  firstName: string;
-  lastName: string;
-}
-
-interface GoogleAuthRequest extends Request {
-  user: GoogleUser;
-}
 
 /**
  * Temporary payload stored inside the verification token.
@@ -96,7 +85,7 @@ export class AuthService {
     }
 
     const salt = await bcrypt.genSalt();
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const hashedPassword = await bcrypt.hash(password || '', salt);
 
     const payload: RegisterPayload = {
       fullName,
@@ -177,7 +166,7 @@ export class AuthService {
       );
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(password, user.password || '');
     if (!isMatch) {
       throw new UnauthorizedException('بيانات الدخول غير صحيحة ❌');
     }
@@ -332,7 +321,7 @@ export class AuthService {
   }
 
   /**
-   * 🔍 Retrieve a user by ID along with all their notes.
+   * Retrieve a user by ID along with all their notes.
    * @param userId - The ID of the user to retrieve.
    * @returns Standardized response with user data and owned notes.
    * @throws NotFoundException if user does not exist.
@@ -360,23 +349,44 @@ export class AuthService {
     });
   }
 
-  public googleLogin(req: Request) {
+  public async googleLogin(req: GoogleAuthRequest) {
     if (!req.user) {
       return 'No user from Google';
     }
 
-    const payload = {
-      email: (req as GoogleAuthRequest).user.email,
-      fullName: `${(req as GoogleAuthRequest).user.firstName} ${(req as GoogleAuthRequest).user.lastName}`,
+    const userData = req.user;
+
+    let user = await this.userModel.findOne({ email: userData.email });
+
+    if (!user) {
+      user = await this.userModel.create({
+        fullName: `${userData.firstName} ${userData.lastName}`,
+        email: userData.email,
+        role: 'student',
+        provider: 'google',
+      });
+    }
+
+    const payload: JwtPayload = {
+      id: user._id.toString(),
+      role: user.role,
+      email: userData.email,
     };
-    const token = this.jwtService.sign(payload);
+
+    const token = await this.generateJwtToken(payload);
 
     return response({
       message: 'User authenticated successfully',
-      data: req.user,
+      data: user,
       token,
       statusCode: 200,
     });
+  }
+
+  public async validGoogleUser(googleUser: RegisterDto) {
+    const user = await this.userModel.findOne({ email: googleUser.email });
+    if (user) return user;
+    return await this.userModel.create(googleUser);
   }
 
   public async getAllUsers(page: number, limit: number, fullName: string) {

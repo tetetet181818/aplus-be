@@ -21,6 +21,7 @@ export class AuthGuard implements CanActivate {
     if (!request.headers.authorization) {
       throw new UnauthorizedException('access denied , invalid token');
     }
+
     const [type, token] = request.headers.authorization.split(' ') ?? [];
     if (type === 'Bearer' && token) {
       try {
