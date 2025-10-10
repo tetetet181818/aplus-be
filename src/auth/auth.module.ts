@@ -9,6 +9,7 @@ import { MailModule } from '../mail/mail.module';
 import { NoteSchema } from '../schemas/note.schema';
 import { NotificationModule } from '../notification/notification.module';
 import { GoogleStrategy } from '../strategies/google.strategy';
+import googleOauthConfig from '../config/google-oauth.config';
 
 @Module({
   controllers: [AuthController],
@@ -31,6 +32,7 @@ import { GoogleStrategy } from '../strategies/google.strategy';
         };
       },
     }),
+    ConfigModule.forFeature(googleOauthConfig),
     MailModule,
     NotificationModule,
   ],
