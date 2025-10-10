@@ -11,6 +11,14 @@ export interface RegisterPayload {
   university?: string;
 }
 
-/**
- * Forget password payload inside reset token.
- */
+interface GoogleUserPayload {
+  email: string;
+  firstName: string;
+  lastName: string;
+  picture?: string;
+  accessToken?: string;
+}
+
+export interface GoogleAuthRequest extends Request {
+  user: GoogleUserPayload;
+}

@@ -5,7 +5,7 @@ export type UserDocument = User & Document;
 
 @Schema({ timestamps: true })
 export class User {
-  @Prop({ type: String, required: true })
+  @Prop({ type: String, required: true, unique: true })
   fullName: string;
 
   @Prop({
@@ -16,8 +16,8 @@ export class User {
   })
   email: string;
 
-  @Prop({ type: String, required: true, minlength: 6 })
-  password: string;
+  @Prop({ type: String, required: false, minlength: 6 })
+  password?: string;
 
   @Prop({ type: String, required: false })
   university: string;
@@ -39,6 +39,9 @@ export class User {
 
   @Prop({ type: Date, default: () => new Date() })
   lastWithdrawalReset: Date;
+
+  @Prop({ default: 'local' })
+  provider: 'local' | 'google';
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

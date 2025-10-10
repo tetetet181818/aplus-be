@@ -16,7 +16,7 @@ export class RegisterDto {
 
   @IsString({ message: 'كلمة المرور يجب أن تكون نصاً' })
   @MinLength(6, { message: 'كلمة المرور يجب ألا تقل عن 6 أحرف' })
-  password: string;
+  password?: string;
 
   @IsOptional()
   @IsString({ message: 'اسم الجامعة يجب أن يكون نصاً' })

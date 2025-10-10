@@ -134,12 +134,14 @@ export class NotesService {
 
   /**
    * Retrieves all notes with optional filtering, pagination, and sorting.
+   * Supports case-insensitive title search.
    * Can sort primarily by maxDownloads, maxPrice, or minPrice.
    *
    * @param {number} page - The current page number.
    * @param {number} limit - The number of items per page.
    * @param {string} sortBy - The field to sort by (default: createdAt).
    * @param {'asc'|'desc'} sortOrder - The sort order (default: desc).
+   * @param {string} [title] - Optional filter by title (case-insensitive).
    * @param {string} [university] - Optional filter by university.
    * @param {string} [college] - Optional filter by college.
    * @param {string} [year] - Optional filter by year.
@@ -152,6 +154,7 @@ export class NotesService {
     limit: number = 10,
     sortBy: string = 'createdAt',
     sortOrder: 'asc' | 'desc' = 'desc',
+    title?: string,
     university?: string,
     college?: string,
     year?: string,
@@ -161,7 +164,6 @@ export class NotesService {
   ) {
     const skip = (page - 1) * limit;
 
-    // Define allowed sort fields
     const sortOptions: Record<string, string> = {
       price: 'price',
       year: 'year',
@@ -172,20 +174,19 @@ export class NotesService {
     const sortField = sortOptions[sortBy] || 'createdAt';
     const sortDirection = sortOrder === 'asc' ? 1 : -1;
 
-    // Build filters
     const filters: Record<string, any> = {};
+    if (title) filters.title = { $regex: title, $options: 'i' };
     if (university) filters.university = university;
     if (college) filters.college = college;
     if (year) filters.year = year;
 
-    // Build sorting object with priority logic
     let sort: Record<string, 1 | -1>;
     if (maxDownloads) {
       sort = { downloads: -1, [sortField]: sortDirection };
     } else if (maxPrice) {
-      sort = { price: 1, [sortField]: sortDirection };
-    } else if (minPrice) {
       sort = { price: -1, [sortField]: sortDirection };
+    } else if (minPrice) {
+      sort = { price: 1, [sortField]: sortDirection };
     } else {
       sort = { [sortField]: sortDirection };
     }

@@ -10,6 +10,7 @@ import {
   UseGuards,
   Param,
   Req,
+  Res,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dtos/register.dto';
@@ -20,10 +21,16 @@ import { UpdateUserDto } from './dtos/update-user.dto';
 import { AuthGuard } from './guards/auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
 import type { JwtPayload } from '../utils/types';
-import type { Request } from 'express';
+import type { GoogleAuthRequest } from '../utils/types';
+import { GoogleAuthGuard } from 'src/guards/google-auth.guard';
+import type { Response } from 'express';
+import { ConfigService } from '@nestjs/config';
 @Controller('/api/v1/auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly config: ConfigService,
+  ) {}
 
   @Get('/check-auth')
   @UseGuards(AuthGuard)
@@ -81,6 +88,7 @@ export class AuthController {
   }
 
   @Get('/all-users')
+  @UseGuards(AuthGuard)
   public getAllUsers(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -97,14 +105,22 @@ export class AuthController {
     return this.authService.getUserById(id);
   }
 
-  @Get('/google')
-  async googleAuth() {
-    // Redirects to Google automatically
-  }
+  @Get('/google/login')
+  @UseGuards(GoogleAuthGuard)
+  async googleAuth() {}
 
-  // Step 2: Handle callback
-  @Get('/google/redirect')
-  googleAuthRedirect(@Req() req: Request) {
-    return this.authService.googleLogin(req);
+  @Get('/google/callback')
+  @UseGuards(GoogleAuthGuard)
+  async googleAuthCallback(
+    @Req() req: GoogleAuthRequest,
+    @Res() res: Response,
+  ) {
+    const response = await this.authService.googleLogin(req);
+    if (typeof response === 'object' && response?.data) {
+      res.redirect(
+        `${this.config.get<string>('FRONTEND_SERVER_PRODUCTION')}/google-callback?token=${response.token}`,
+      );
+    }
+    return response;
   }
 }
