@@ -8,6 +8,7 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 
+import axios from 'axios';
 import { Note } from '../schemas/note.schema';
 import response from '../utils/response.pattern';
 import { CreateNoteDto } from './dtos/create-note.dto';
@@ -18,14 +19,13 @@ import {
   UploadApiErrorResponse,
 } from 'cloudinary';
 import { User } from '../schemas/users.schema';
-import axios from 'axios';
 import { ConfigService } from '@nestjs/config';
 import { NotificationService } from '../notification/notification.service';
-import { Response } from 'express';
 import { SalesService } from '../sales/sales.service';
 import { PLATFORM_FREE } from '../utils/constants';
 import { UpdateNoteDto } from './dtos/update.note.dto';
 import { Express } from 'express';
+import type { Response } from 'express';
 @Injectable()
 export class NotesService {
   constructor(
@@ -74,6 +74,13 @@ export class NotesService {
         throw new InternalServerErrorException('فشل في إنشاء الملخص');
       }
 
+      await this.notificationService.create({
+        userId,
+        title: 'تم انشاء ملخص جديد',
+        message: `تم انشاء ملخص جديد بنجاح باسم ${newNote.title}`,
+        type: 'notes',
+      });
+
       return response({
         data: newNote,
         message: 'تم إنشاء الملخص بنجاح، يمكنك الآن عرضه أو تعديله',
@@ -118,7 +125,10 @@ export class NotesService {
 
   public async getPurchasedNotes(userId: string) {
     const notes = await this.noteModel
-      .find({ purchased_by: { $in: [userId] } })
+      .find({
+        purchased_by: { $in: [userId] },
+      })
+      .sort({ createdAt: -1 })
       .lean();
 
     if (!notes) {
@@ -280,7 +290,10 @@ export class NotesService {
 
   /** Get notes by user */
   public async getUserNotes(userId: string) {
-    const notes = await this.noteModel.find({ owner_id: userId }).lean();
+    const notes = await this.noteModel
+      .find({ owner_id: userId })
+      .sort({ createdAt: -1 })
+      .lean();
 
     if (!notes) {
       throw new NotFoundException('لا توجد ملخصات خاصة بك حالياً');
@@ -685,7 +698,7 @@ export class NotesService {
     return new Promise<UploadApiResponse>((resolve, reject) => {
       cloudinary.uploader
         .upload_stream(
-          { folder: 'pdfs' },
+          { folder: 'pdfs', resource_type: 'raw' },
           (
             error: UploadApiErrorResponse | undefined,
             result: UploadApiResponse | undefined,
