@@ -8,7 +8,6 @@ import {
   Post,
   Put,
   Query,
-  Res,
   UploadedFiles,
   UseGuards,
   UseInterceptors,
@@ -201,13 +200,6 @@ export class NotesController {
     @CurrentUser() payload: JwtPayload,
   ) {
     return this.notesService.likeOrNot(noteId, payload.id);
-  }
-  @Post('/download/:publicId')
-  async downloadNote(
-    @Param('publicId') publicId: string,
-    @Res() res: Response,
-  ) {
-    return this.notesService.downloadNote(publicId, res);
   }
 
   @Post('/create-payment-link')

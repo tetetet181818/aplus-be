@@ -696,9 +696,12 @@ export class NotesService {
     file: Express.Multer.File,
   ): Promise<UploadApiResponse> {
     return new Promise<UploadApiResponse>((resolve, reject) => {
+      const originalName = file.originalname || 'note.pdf';
+      const baseName = originalName.replace(/\.[^/.]+$/, '');
+
       cloudinary.uploader
         .upload_stream(
-          { folder: 'pdfs', resource_type: 'raw' },
+          { folder: 'pdfs', resource_type: 'raw', public_id: baseName },
           (
             error: UploadApiErrorResponse | undefined,
             result: UploadApiResponse | undefined,
