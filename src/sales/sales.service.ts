@@ -5,12 +5,15 @@ import { Sales } from '../schemas/sales.schema';
 import response from '../utils/response.pattern';
 import { CreateSalesDto } from './dtos/create-sales.dto';
 import { NotificationService } from '../notification/notification.service';
+import { User } from '../schemas/users.schema';
 
 @Injectable()
 export class SalesService {
   constructor(
     @InjectModel('Sales')
     private readonly salesModel: Model<Sales>,
+    @InjectModel(User.name)
+    private readonly usersModel: Model<User>,
     private readonly notificationService: NotificationService,
   ) {}
 
@@ -71,13 +74,21 @@ export class SalesService {
   public async getSingleSale(id: string) {
     const sale = await this.salesModel.findById(id).lean();
 
+    const buyer = await this.usersModel
+      .findById(sale?.buyerId)
+      .select('fullName email university balance')
+      .lean();
+    const seller = await this.usersModel
+      .findById(sale?.sellerId)
+      .select('fullName email university balance')
+      .lean();
     if (!sale) {
       throw new NotFoundException('حدث خطأ أثناء جلب المبيعات');
     }
 
     return response({
       message: 'تم جلب تفاصيل المبيعات بنجاح',
-      data: sale,
+      data: { buyer, seller, sale },
       statusCode: 200,
     });
   }

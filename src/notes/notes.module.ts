@@ -11,6 +11,7 @@ import { CloudinaryConfig } from '../cloudinary/cloudinary.config';
 import { UserSchema } from '../schemas/users.schema';
 import { NotificationModule } from '../notification/notification.module';
 import { SalesModule } from '../sales/sales.module';
+import { SalesSchema } from '../schemas/sales.schema';
 
 @Module({
   controllers: [NotesController],
@@ -20,6 +21,7 @@ import { SalesModule } from '../sales/sales.module';
     MongooseModule.forFeature([
       { name: 'Note', schema: NoteSchema },
       { name: 'User', schema: UserSchema },
+      { name: 'Sales', schema: SalesSchema },
     ]),
     JwtModule.registerAsync({
       inject: [ConfigService],

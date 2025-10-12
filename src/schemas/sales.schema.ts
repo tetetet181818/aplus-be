@@ -6,7 +6,7 @@ export class Sales extends Document {
   @Prop({ type: String, required: true })
   sellerId: string;
 
-  @Prop({ type: String, required: true })
+  @Prop({ type: String, required: false })
   buyerId: string;
 
   @Prop({ type: String, required: true })
@@ -14,6 +14,9 @@ export class Sales extends Document {
 
   @Prop({ type: Number, required: true })
   amount: number;
+
+  @Prop({ type: Number, required: true })
+  commission: number;
 
   @Prop({ type: String, required: true })
   status: string;

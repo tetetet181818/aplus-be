@@ -22,10 +22,11 @@ import { User } from '../schemas/users.schema';
 import { ConfigService } from '@nestjs/config';
 import { NotificationService } from '../notification/notification.service';
 import { SalesService } from '../sales/sales.service';
-import { PLATFORM_FREE } from '../utils/constants';
+import { PLATFORM_DECREMENT_PERCENT, PLATFORM_FREE } from '../utils/constants';
 import { UpdateNoteDto } from './dtos/update.note.dto';
 import { Express } from 'express';
 import type { Response } from 'express';
+import { Sales } from '../schemas/sales.schema';
 @Injectable()
 export class NotesService {
   constructor(
@@ -33,6 +34,8 @@ export class NotesService {
     private readonly noteModel: Model<Note>,
     @InjectModel(User.name)
     private readonly usersModel: Model<User>,
+    @InjectModel(Sales.name)
+    private readonly saleModel: Model<Sales>,
     private readonly config: ConfigService,
     private readonly notificationService: NotificationService,
     private readonly salesService: SalesService,
@@ -123,22 +126,46 @@ export class NotesService {
     }
   }
 
+  /**
+   * Retrieves all purchased notes for a specific user,
+   * along with their related sales records.
+   */
   public async getPurchasedNotes(userId: string) {
+    // Get all notes purchased by the user
     const notes = await this.noteModel
       .find({
         purchased_by: { $in: [userId] },
       })
+      .select('-__v -reviews -purchased_by')
       .sort({ createdAt: -1 })
       .lean();
 
-    if (!notes) {
+    if (!notes || notes.length === 0) {
       throw new NotFoundException('لم تقم بشراء أي ملخصات بعد');
     }
+
+    // Get all sales linked to those notes
+    const sales = await this.saleModel
+      .find({
+        note_id: { $in: notes.map((note) => note._id) },
+        buyerId: userId,
+      })
+      .lean();
+
+    const notesWithSales = notes.map((note) => {
+      const sale = sales.find(
+        (s) => s.note_id.toString() === note._id.toString(),
+      );
+      return {
+        ...note,
+        saleId: sale?._id || null,
+      };
+    });
 
     return response({
       message: 'تم جلب جميع الملخصات التي قمت بشرائها بنجاح',
       statusCode: 200,
-      data: notes?.length > 0 ? notes : [],
+      data: notesWithSales,
     });
   }
 
@@ -460,7 +487,8 @@ export class NotesService {
       sellerId: note.owner_id.toString(),
       buyerId: userId,
       note_id: noteId,
-      amount: note.price,
+      amount: note.price - PLATFORM_DECREMENT_PERCENT * note.price,
+      commission: PLATFORM_DECREMENT_PERCENT * note.price,
       payment_method: 'credit_card',
       note_title: note.title,
       invoice_id: body.invoice_id,
@@ -481,6 +509,15 @@ export class NotesService {
     if (!updateNote) {
       throw new NotFoundException('حدث خطاء اثناء شراء الملخص');
     }
+
+    const seller = await this.usersModel.findById(note.owner_id);
+
+    if (!seller) {
+      throw new NotFoundException('المستخدم غير موجود');
+    }
+
+    seller.balance += note.price - PLATFORM_DECREMENT_PERCENT * note.price;
+    await seller.save();
 
     return response({
       message: 'تم شراء الملخص بنجاح',
@@ -607,31 +644,6 @@ export class NotesService {
       data: alreadyLiked,
       statusCode: 200,
     });
-  }
-
-  public async downloadNote(publicId: string, res: Response) {
-    try {
-      // Your Cloudinary file URL pattern
-      const cloudinaryUrl = `https://res.cloudinary.com/dmdncwenn/image/upload/fl_attachment/v1759050393/pdfs/${publicId}.pdf`;
-
-      const response = await axios.get(cloudinaryUrl, {
-        responseType: 'stream',
-      });
-
-      // Forward headers for download
-      res.setHeader(
-        'Content-Disposition',
-        `attachment; filename="${publicId}.pdf"`,
-      );
-      res.setHeader('Content-Type', 'application/pdf');
-
-      // Pipe the file directly to response
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-      response.data.pipe(res);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (err) {
-      throw new NotFoundException('File not found or download failed.');
-    }
   }
 
   public async updateNote(noteId: string, body: UpdateNoteDto, userId: string) {

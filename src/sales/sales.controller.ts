@@ -1,6 +1,7 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { SalesService } from './sales.service';
 import { CreateSalesDto } from './dtos/create-sales.dto';
+import { AuthGuard } from '../auth/guards/auth.guard';
 
 @Controller('/api/v1/sales')
 export class SalesController {
@@ -12,11 +13,13 @@ export class SalesController {
   }
 
   @Get('/')
+  @UseGuards(AuthGuard)
   public getAllSales() {
     return this.salesService.getAllSales();
   }
 
   @Get('/:id')
+  @UseGuards(AuthGuard)
   public getSingleSale(@Param('id') id: string) {
     return this.salesService.getSingleSale(id);
   }

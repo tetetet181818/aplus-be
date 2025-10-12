@@ -21,6 +21,10 @@ export class CreateSalesDto {
   @IsNotEmpty()
   amount: number;
 
+  @IsNumber()
+  @IsNotEmpty()
+  commission: number;
+
   @IsString()
   @IsNotEmpty()
   payment_method: string;

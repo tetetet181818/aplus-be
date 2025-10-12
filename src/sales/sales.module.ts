@@ -7,13 +7,17 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { JwtModule } from '@nestjs/jwt';
 import { SalesSchema } from '../schemas/sales.schema';
 import { NotificationModule } from '../notification/notification.module';
+import { UserSchema } from '../schemas/users.schema';
 
 @Module({
   controllers: [SalesController],
   providers: [SalesService],
   imports: [
     ConfigModule,
-    MongooseModule.forFeature([{ name: 'Sales', schema: SalesSchema }]),
+    MongooseModule.forFeature([
+      { name: 'Sales', schema: SalesSchema },
+      { name: 'User', schema: UserSchema },
+    ]),
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
