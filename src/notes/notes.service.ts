@@ -140,7 +140,7 @@ export class NotesService {
       .sort({ createdAt: -1 })
       .lean();
 
-    if (!notes || notes.length === 0) {
+    if (!notes) {
       throw new NotFoundException('لم تقم بشراء أي ملخصات بعد');
     }
 
@@ -165,7 +165,7 @@ export class NotesService {
     return response({
       message: 'تم جلب جميع الملخصات التي قمت بشرائها بنجاح',
       statusCode: 200,
-      data: notesWithSales,
+      data: notesWithSales.length > 0 ? notesWithSales : [],
     });
   }
 
