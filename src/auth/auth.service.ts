@@ -21,6 +21,7 @@ import { randomBytes } from 'node:crypto';
 import { ResetPasswordDto } from './dtos/reset-password.dto';
 import { Note } from '../schemas/note.schema';
 import { NotificationService } from '../notification/notification.service';
+import type { Response } from 'express';
 
 /**
  * Temporary payload stored inside the verification token.
@@ -184,7 +185,12 @@ export class AuthService {
     };
 
     const token = await this.generateJwtToken(payload);
-
+    // res.cookie('token', token, {
+    //   httpOnly: true,
+    //   expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30),
+    //   secure: this.config.get<string>('NODE_ENV') === 'production',
+    //   path: '/',
+    // });
     return response({
       message: 'مرحباً بعودتك! تم تسجيل الدخول بنجاح ✅',
       token,
