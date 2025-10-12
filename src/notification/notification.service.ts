@@ -29,7 +29,8 @@ export class NotificationService {
       | 'withdrawal'
       | 'sales'
       | 'auth'
-      | 'notes';
+      | 'notes'
+      | 'purchase';
   }) {
     const notification = await this.notificationModel.create({
       userId,

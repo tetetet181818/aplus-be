@@ -30,7 +30,7 @@ export class SalesService {
       title: '💰 تم بيع أحد ملخّصاتك!',
       message:
         'مبروك! تم شراء أحد ملخّصاتك بنجاح، نتمنى لك المزيد من المبيعات 🎉',
-      type: 'sales',
+      type: 'purchase',
     });
 
     await this.notificationService.create({

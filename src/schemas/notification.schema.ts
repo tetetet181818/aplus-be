@@ -18,6 +18,7 @@ export class Notification extends Document {
   @Prop({ default: 'info' })
   type:
     | 'info'
+    | 'purchase'
     | 'success'
     | 'warning'
     | 'error'
