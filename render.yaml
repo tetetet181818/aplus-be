@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: nestjs-mailer-app
+    env: node
+    plan: free
+    buildCommand: |
+      npm install
+      npm run build
+      mkdir -p dist/mail/templates
+      cp -r src/mail/templates/* dist/mail/templates/
+    startCommand: |
+      npm run start:prod
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 9090
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_SECURITY
+        sync: false
+      - key: SMTP_USERNAME
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+    autoDeploy: true
