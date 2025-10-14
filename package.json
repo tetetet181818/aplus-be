@@ -59,7 +59,7 @@
     "@types/jest": "^30.0.0",
     "@types/multer": "^2.0.0",
     "@types/node": "^22.18.8",
-    "@types/nodemailer": "^7.0.1",
+    "@types/nodemailer": "^6.4.9",
     "@types/passport-google-oauth20": "^2.0.16",
     "@types/streamifier": "^0.1.2",
     "@types/supertest": "^6.0.2",
