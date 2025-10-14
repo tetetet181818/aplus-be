@@ -28,9 +28,9 @@ export class MailService {
         <p>مرحبًا بك! اضغط الزر التالي لتفعيل حسابك في منصة أ+:</p>
         <div style="text-align:center;margin:24px 0;">
           <a href="${confirmationURL}" 
-             style="background:#2c3e50;color:#fff;text-decoration:none;
+              style="background:#2c3e50;color:#fff;text-decoration:none;
                     padding:10px 20px;border-radius:6px;font-weight:bold;">
-             تأكيد البريد الآن
+              تأكيد البريد الآن
           </a>
         </div>
         <p style="font-size:14px;color:#666;">

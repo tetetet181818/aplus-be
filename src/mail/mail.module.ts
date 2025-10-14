@@ -3,8 +3,7 @@ import { Module } from '@nestjs/common';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { ConfigService } from '@nestjs/config';
 import { MailService } from './mail.service';
-import { join } from 'node:path';
-import { EjsAdapter } from '@nestjs-modules/mailer/dist/adapters/ejs.adapter';
+
 @Module({
   imports: [
     MailerModule.forRootAsync({
@@ -14,17 +13,14 @@ import { EjsAdapter } from '@nestjs-modules/mailer/dist/adapters/ejs.adapter';
           transport: {
             host: config.get<string>('SMTP_HOST'),
             port: config.get<number>('SMTP_PORT'),
-            secure: config.get<string>('SMTP_SECURITY') === 'SSL',
+            secure: config.get<string>('NODE_ENV') === 'production',
             auth: {
               user: config.get<string>('SMTP_USERNAME'),
               pass: config.get<string>('SMTP_PASSWORD'),
             },
           },
-          template: {
-            dir: join(__dirname, 'templates'),
-            adapter: new EjsAdapter({
-              inlineCssEnabled: true,
-            }),
+          defaults: {
+            from: '"Aplus Platform" <no-reply@aplusplatformsa.com>',
           },
         };
       },
