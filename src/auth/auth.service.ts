@@ -101,7 +101,7 @@ export class AuthService {
     });
 
     try {
-      await this.mailService.register({
+      await this.mailService.sendRegistrationEmail({
         email,
         confirmationURL: `${
           this.config.get<string>('NODE_ENV') === 'development'
@@ -215,7 +215,7 @@ export class AuthService {
     await user.save();
 
     try {
-      await this.mailService.forgetPassword({
+      await this.mailService.sendForgetPasswordEmail({
         email,
         resetURL: `${
           this.config.get<string>('NODE_ENV') === 'development'
