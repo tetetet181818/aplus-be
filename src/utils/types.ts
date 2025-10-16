@@ -1,7 +1,10 @@
 export type JwtPayload = {
-  id: string;
+  id?: string;
   role: string;
   email: string;
+  fullName?: string;
+  password?: string;
+  university?: string;
 };
 
 export interface RegisterPayload {

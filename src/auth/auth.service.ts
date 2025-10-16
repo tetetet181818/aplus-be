@@ -14,7 +14,7 @@ import { RegisterDto } from './dtos/register.dto';
 import response from '../utils/response.pattern';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
-import { GoogleAuthRequest, JwtPayload, RegisterPayload } from '../utils/types';
+import { GoogleAuthRequest, JwtPayload } from '../utils/types';
 import { LoginDto } from './dtos/login.dto';
 import { MailService } from '../mail/mail.service';
 import { UpdateUserDto } from './dtos/update-user.dto';
@@ -89,17 +89,16 @@ export class AuthService {
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(password || '', salt);
 
-    const payload: RegisterPayload = {
+    const payload = {
       fullName,
       email,
       password: hashedPassword,
       university,
+      role: 'student',
+      provider: 'local',
     };
 
-    const token = await this.jwtService.signAsync(payload, {
-      secret: this.config.get<string>('JWT_SECRET'),
-      expiresIn: this.config.get<string>('JWT_EXPIRES_IN'),
-    });
+    const token = await this.generateJwtToken(payload);
 
     try {
       await this.mailService.sendRegistrationEmail({
@@ -124,14 +123,9 @@ export class AuthService {
   /**
    * Verify user email and create account if token is valid.
    */
-  public async verify(token: string) {
+  public async verify(token: string, res: Response) {
     try {
-      const decoded = await this.jwtService.verifyAsync<RegisterPayload>(
-        token,
-        {
-          secret: this.config.get<string>('JWT_SECRET'),
-        },
-      );
+      const decoded = await this.verifyToken(token);
       const exists = await this.userModel.findOne({ email: decoded.email });
 
       if (exists) {
@@ -159,6 +153,12 @@ export class AuthService {
         type: 'success',
       });
 
+      res.cookie('access_token', newToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+      });
+
       return response({
         message: '🎊 تم تفعيل حسابك بنجاح! يمكنك الآن استخدام المنصه 🚀',
         data: newUser,
@@ -174,7 +174,7 @@ export class AuthService {
   /**
    * Login existing user by validating email and password.
    */
-  public async login(body: LoginDto) {
+  public async login(body: LoginDto, res: Response) {
     const { email, password } = body;
     const user = await this.userModel.findOne({ email });
 
@@ -204,9 +204,24 @@ export class AuthService {
 
     const token = await this.generateJwtToken(payload);
 
+    res.cookie('access_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 1000 * 60 * 60 * 24 * 7,
+    });
+
     return response({
       message: 'مرحباً بعودتك! تم تسجيل الدخول بنجاح ✅',
       token,
+      statusCode: 200,
+    });
+  }
+
+  public logout(res: Response) {
+    res.clearCookie('access_token');
+    return response({
+      message: 'تم تسجيل الخروج بنجاح ✅',
       statusCode: 200,
     });
   }
@@ -438,7 +453,10 @@ export class AuthService {
    * Generate JWT token for authenticated user.
    */
   private generateJwtToken(payload: JwtPayload): Promise<string> {
-    return this.jwtService.signAsync(payload);
+    return this.jwtService.signAsync(payload, {
+      secret: this.config.get<string>('JWT_SECRET'),
+      expiresIn: this.config.get<string>('JWT_EXPIRES_IN'),
+    });
   }
 
   private verifyToken(token: string): Promise<JwtPayload> {

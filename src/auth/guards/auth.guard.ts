@@ -16,26 +16,34 @@ export class AuthGuard implements CanActivate {
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
   ) {}
-  async canActivate(context: ExecutionContext) {
+
+  /**
+   * Checks and verifies JWT from header or cookie.
+   * Works with raw tokens (no "Bearer" prefix).
+   * @param context - Execution context.
+   * @returns {Promise<boolean>} True if token is valid.
+   * @throws {UnauthorizedException} If token missing or invalid.
+   */
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const request: Request = context.switchToHttp().getRequest();
-    if (!request.headers.authorization) {
-      throw new UnauthorizedException('access denied , invalid token');
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+    const token = request.cookies?.access_token?.trim();
+
+    if (!token) {
+      throw new UnauthorizedException('Access denied: missing token');
     }
 
-    const [type, token] = request.headers.authorization.split(' ') ?? [];
-    if (type === 'Bearer' && token) {
-      try {
-        const payload: JwtPayload = await this.jwtService.verifyAsync(token, {
-          secret: this.config.get('JWT_SECRET'),
-        });
-        request[CURRENT_USER_KEY] = payload;
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      } catch (error) {
-        throw new UnauthorizedException('access denied , invalid token');
-      }
-    } else {
-      throw new UnauthorizedException('access denied , invalid token');
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      const payload: JwtPayload = await this.jwtService.verifyAsync(token, {
+        secret: this.config.get<string>('JWT_SECRET'),
+      });
+
+      request[CURRENT_USER_KEY] = payload;
+      return true;
+    } catch {
+      throw new UnauthorizedException('Access denied: invalid token');
     }
-    return true;
   }
 }
