@@ -22,7 +22,7 @@ export class WithdrawalsController {
   @Get('/me')
   @UseGuards(AuthGuard)
   public getAllUserWithdrawals(@CurrentUser() payload: JwtPayload) {
-    return this.withdrawalsService.getAllUserWithdrawals(payload.id);
+    return this.withdrawalsService.getAllUserWithdrawals(payload.id || '');
   }
 
   @Post('/create')
@@ -31,7 +31,7 @@ export class WithdrawalsController {
     @Body() body: CreateWithdrawalDto,
     @CurrentUser() payload: JwtPayload,
   ) {
-    return this.withdrawalsService.createWithdrawal(body, payload.id);
+    return this.withdrawalsService.createWithdrawal(body, payload.id || '');
   }
 
   @Get('/')

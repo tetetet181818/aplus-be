@@ -67,19 +67,19 @@ export class NotesController {
   @Get('/my-notes')
   @UseGuards(AuthGuard)
   public getUserNotes(@CurrentUser() payload: JwtPayload) {
-    return this.notesService.getUserNotes(payload.id);
+    return this.notesService.getUserNotes(payload.id || '');
   }
 
   @Get('/purchased')
   @UseGuards(AuthGuard)
   public getPurchasedNotes(@CurrentUser() payload: JwtPayload) {
-    return this.notesService.getPurchasedNotes(payload.id);
+    return this.notesService.getPurchasedNotes(payload.id || '');
   }
 
   @Get('/likes-notes')
   @UseGuards(AuthGuard)
   public getLikesNotes(@CurrentUser() payload: JwtPayload) {
-    return this.notesService.getLikesNotes(payload.id);
+    return this.notesService.getLikesNotes(payload.id || '');
   }
 
   @Post('/create')
@@ -101,7 +101,7 @@ export class NotesController {
   ) {
     const pdf = files.file?.[0];
     const image = files.cover?.[0];
-    return this.notesService.createNote(body, payload.id, image, pdf);
+    return this.notesService.createNote(body, payload.id || '', image, pdf);
   }
 
   @Put('/update/:id')
@@ -111,7 +111,7 @@ export class NotesController {
     @CurrentUser() payload: JwtPayload,
     @Body() body: UpdateNoteDto,
   ) {
-    return this.notesService.updateNote(noteId, body, payload.id);
+    return this.notesService.updateNote(noteId, body, payload.id || '');
   }
 
   @Get(':id')
@@ -125,7 +125,7 @@ export class NotesController {
     @Param('id') noteId: string,
     @CurrentUser() payload: JwtPayload,
   ) {
-    return this.notesService.deleteNote(noteId, payload.id);
+    return this.notesService.deleteNote(noteId, payload.id || '');
   }
 
   @Post('/:id/add-review')
@@ -138,7 +138,7 @@ export class NotesController {
     return this.notesService.addReview(noteId, {
       rating: body.rating,
       comment: body.comment,
-      userId: payload.id,
+      userId: payload.id || '',
       userName: payload.email,
     });
   }
@@ -151,7 +151,12 @@ export class NotesController {
     @Body() body: UpdateReviewDto,
     @CurrentUser() payload: JwtPayload,
   ) {
-    return this.notesService.updateReview(noteId, reviewId, payload.id, body);
+    return this.notesService.updateReview(
+      noteId,
+      reviewId,
+      payload.id || '',
+      body,
+    );
   }
 
   @Delete('/:noteId/reviews/:reviewId')
@@ -161,7 +166,7 @@ export class NotesController {
     @Param('reviewId') reviewId: string,
     @CurrentUser() payload: JwtPayload,
   ) {
-    return this.notesService.deleteReview(noteId, reviewId, payload.id);
+    return this.notesService.deleteReview(noteId, reviewId, payload.id || '');
   }
 
   @Post('/:id/purchase')
@@ -171,7 +176,7 @@ export class NotesController {
     @CurrentUser() payload: JwtPayload,
     @Body() body: { invoice_id: string; status?: string },
   ) {
-    return this.notesService.purchaseNote(noteId, payload.id, body);
+    return this.notesService.purchaseNote(noteId, payload.id || '', body);
   }
   @Post('/:id/like')
   @HttpCode(200)
@@ -180,7 +185,7 @@ export class NotesController {
     @Param('id') noteId: string,
     @CurrentUser() payload: JwtPayload,
   ) {
-    return this.notesService.likeNote(noteId, payload.id);
+    return this.notesService.likeNote(noteId, payload.id || '');
   }
 
   @Post('/:id/unlike')
@@ -190,7 +195,7 @@ export class NotesController {
     @Param('id') noteId: string,
     @CurrentUser() payload: JwtPayload,
   ) {
-    return this.notesService.unlikeNote(noteId, payload.id);
+    return this.notesService.unlikeNote(noteId, payload.id || '');
   }
   @Get('/:id/toggle-like')
   @HttpCode(200)
@@ -199,7 +204,7 @@ export class NotesController {
     @Param('id') noteId: string,
     @CurrentUser() payload: JwtPayload,
   ) {
-    return this.notesService.likeOrNot(noteId, payload.id);
+    return this.notesService.likeOrNot(noteId, payload.id || '');
   }
 
   @Post('/create-payment-link')

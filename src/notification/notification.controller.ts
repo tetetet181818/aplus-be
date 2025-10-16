@@ -21,7 +21,7 @@ export class NotificationController {
   @Get('/')
   @UseGuards(AuthGuard)
   async getAll(@CurrentUser() payload: JwtPayload) {
-    return this.notificationService.getAll(payload.id);
+    return this.notificationService.getAll(payload.id || '');
   }
 
   /**  Mark single as read */
@@ -31,21 +31,21 @@ export class NotificationController {
     @CurrentUser() payload: JwtPayload,
     @Param('id') id: string,
   ) {
-    return this.notificationService.markAsRead(payload.id, id);
+    return this.notificationService.markAsRead(payload.id || '', id);
   }
 
   /**  Mark all as read */
   @Patch('/read-all')
   @UseGuards(AuthGuard)
   async markAllAsRead(@CurrentUser() payload: JwtPayload) {
-    return this.notificationService.markAllAsRead(payload.id);
+    return this.notificationService.markAllAsRead(payload.id || '');
   }
 
   /**  Clear all notifications */
   @Delete('/clear-all')
   @UseGuards(AuthGuard)
   async clearAll(@CurrentUser() payload: JwtPayload) {
-    return this.notificationService.clearAll(payload.id);
+    return this.notificationService.clearAll(payload.id || '');
   }
 
   @Post()
@@ -54,7 +54,7 @@ export class NotificationController {
     @Body() body: { title: string; message: string; type?: string },
   ) {
     return this.notificationService.create({
-      userId: payload.id,
+      userId: payload.id || '',
       title: body.title,
       message: body.message,
       type: body.type as 'info' | 'success' | 'warning' | 'error',
