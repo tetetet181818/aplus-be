@@ -7,13 +7,6 @@ export type JwtPayload = {
   university?: string;
 };
 
-export interface RegisterPayload {
-  fullName: string;
-  email: string;
-  password: string;
-  university?: string;
-}
-
 interface GoogleUserPayload {
   email: string;
   firstName: string;

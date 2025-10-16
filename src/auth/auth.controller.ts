@@ -91,7 +91,8 @@ export class AuthController {
     @CurrentUser() payload: JwtPayload,
     @Body() body: UpdateUserDto,
   ) {
-    return this.authService.updateUser(payload.id || '', body);
+    if (!payload.id) return;
+    return this.authService.updateUser(payload.id, body);
   }
 
   @Get('/all-users')

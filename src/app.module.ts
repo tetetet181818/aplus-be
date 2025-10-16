@@ -10,9 +10,19 @@ import { SalesModule } from './sales/sales.module';
 import { WithdrawalsModule } from './withdrawals/withdrawals.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 @Module({
   controllers: [AppController],
   imports: [
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          ttl: 10000,
+          limit: 5,
+        },
+      ],
+    }),
     ConfigModule.forRoot({
       envFilePath: '.env',
       isGlobal: true,
@@ -36,6 +46,13 @@ import { DashboardModule } from './dashboard/dashboard.module';
     CloudinaryModule,
     DashboardModule,
     NotificationModule,
+  ],
+
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
   ],
 })
 export class AppModule {}

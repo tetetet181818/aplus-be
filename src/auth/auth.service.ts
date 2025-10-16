@@ -42,7 +42,11 @@ export class AuthService {
   ) {}
 
   public async getCurrentUser(id: string) {
-    const user = await this.userModel.findOne({ _id: id }).select('-password');
+    if (!id) {
+      throw new UnauthorizedException('المستخدم غير موجود 🚫');
+    }
+
+    const user = await this.userModel.findById(id).select('-password');
 
     if (!user) {
       throw new NotFoundException('المستخدم غير موجود 🚫');
@@ -95,7 +99,6 @@ export class AuthService {
       password: hashedPassword,
       university,
       role: 'student',
-      provider: 'local',
     };
 
     const token = await this.generateJwtToken(payload);
@@ -126,6 +129,7 @@ export class AuthService {
   public async verify(token: string, res: Response) {
     try {
       const decoded = await this.verifyToken(token);
+
       const exists = await this.userModel.findOne({ email: decoded.email });
 
       if (exists) {
@@ -139,11 +143,9 @@ export class AuthService {
         university: decoded.university,
       });
 
-      const newToken = await this.generateJwtToken({
-        id: newUser._id.toString(),
-        role: newUser.role,
-        email: newUser.email,
-      });
+      if (!newUser) {
+        throw new BadRequestException('حدث خطاء في انشاء الحساب');
+      }
 
       await this.notificationService.create({
         userId: newUser._id.toString(),
@@ -151,6 +153,15 @@ export class AuthService {
         message:
           'أهلاً وسهلاً بك في +A! تم تفعيل حسابك بنجاح، ويمكنك الآن الاستمتاع بكامل مزايا المنصة واستكشاف المحتوى المميز 🚀✨',
         type: 'success',
+      });
+
+      const newToken = await this.generateJwtToken({
+        id: newUser._id.toString(),
+        fullName: decoded.fullName,
+        email: decoded.email,
+        password: decoded.password,
+        university: decoded.university,
+        role: decoded.role,
       });
 
       res.cookie('access_token', newToken, {
@@ -162,7 +173,6 @@ export class AuthService {
       return response({
         message: '🎊 تم تفعيل حسابك بنجاح! يمكنك الآن استخدام المنصه 🚀',
         data: newUser,
-        token: newToken,
         statusCode: 201,
       });
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
