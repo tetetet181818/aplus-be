@@ -4,10 +4,13 @@ import { ValidationPipe } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   app.use(cookieParser());
   app.enableCors({
-    origin: ['http://localhost:3000', 'https://aplusplatformsa.com'],
+    origin: [
+      'http://localhost:3000',
+      'https://aplusplatformsa.com',
+      'https://www.aplusplatformsa.com',
+    ],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
