@@ -64,12 +64,6 @@ export class AuthController {
     return this.authService.resetPassword(body);
   }
 
-  @Post('/logout')
-  @HttpCode(200)
-  public logout(@Query('token') token: string) {
-    return this.authService.logout(token);
-  }
-
   @Delete('/delete-account')
   @HttpCode(200)
   @UseGuards(AuthGuard)

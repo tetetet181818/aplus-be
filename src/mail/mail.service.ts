@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import * as Nodemailer from 'nodemailer';
 import { MailtrapTransport } from 'mailtrap';
 import { ConfigService } from '@nestjs/config';
@@ -12,7 +12,6 @@ export class MailService {
 
     // Create transporter using Mailtrap API (not SMTP)
     this.transporter = Nodemailer.createTransport(
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-call
       MailtrapTransport({
         token: token || '',
       }),
@@ -35,7 +34,7 @@ export class MailService {
       to: email,
       from: sender,
       email,
-      subject: 'تأكيد التسجيل في منصة +A',
+      subject: 'تأكيد التسجيل في منصة أ+',
       text: `اضغط على الرابط لتأكيد التسجيل: ${confirmationURL}`,
       html: `
             <!DOCTYPE html>
@@ -80,12 +79,10 @@ export class MailService {
     try {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
       const result = await this.transporter.sendMail(mail);
-      console.log('✅ Registration email sent:', result);
       // eslint-disable-next-line @typescript-eslint/no-unsafe-return
       return result;
     } catch (error) {
-      console.error('❌ Error sending registration email:', error);
-      throw error;
+      throw new BadRequestException(error);
     }
   }
   async sendForgetPasswordEmail({
@@ -103,7 +100,7 @@ export class MailService {
     const mail = {
       from: sender,
       to: email,
-      subject: 'إعادة تعيين كلمة المرور - منصة +A',
+      subject: 'إعادة تعيين كلمة المرور - منصة أ+',
       text: `لقد طلبت إعادة تعيين كلمة المرور. استخدم الرابط التالي لإعادة التعيين: ${resetURL}`,
       html: `
               <!DOCTYPE html>
@@ -163,7 +160,6 @@ export class MailService {
     try {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
       const result = await this.transporter.sendMail(mail);
-      console.log('Forget password email sent:', result);
       // eslint-disable-next-line @typescript-eslint/no-unsafe-return
       return result;
     } catch (error) {

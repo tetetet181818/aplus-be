@@ -148,8 +148,8 @@ export class AuthService {
         data: [{ id: newUser._id, email: newUser.email }],
         statusCode: 201,
       });
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err) {
-      console.log(`⚠️ Invalid or expired token ${err}`);
       throw new BadRequestException('رابط التفعيل غير صالح أو منتهي ⏳');
     }
   }
@@ -271,21 +271,10 @@ export class AuthService {
         message: 'تم تغيير كلمة المرور بنجاح، يمكنك تسجيل الدخول الآن 🔐',
         statusCode: 200,
       });
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err) {
-      console.log(`⚠️ Invalid or expired reset token ${err}`);
       throw new BadRequestException('رابط إعادة التعيين غير صالح أو منتهي ⏳');
     }
-  }
-
-  /**
-   * Logout user (frontend should delete token, here we just respond).
-   */
-  public logout(token: string) {
-    console.log(`👋 User logged out with token: ${token}`);
-    return response({
-      message: 'تم تسجيل الخروج، نراك قريباً! 👋',
-      statusCode: 200,
-    });
   }
 
   /**

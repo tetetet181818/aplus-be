@@ -1,5 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Note } from '../schemas/note.schema';
@@ -190,7 +194,7 @@ export class DashboardService {
       .exec();
 
     if (!deletedNotes) {
-      console.log(`Deleted notes for user ${id}`);
+      throw new BadRequestException('لم يتم حذف الملاحظات');
     }
     const deletedUser = await this.usersModel.findByIdAndDelete(id).exec();
     if (!deletedUser) {
