@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -66,7 +67,7 @@ export class AuthService {
     return response({
       message: 'تم العثور على المستخدم ✅',
       statusCode: 200,
-      data: [user],
+      data: user,
     });
   }
 
@@ -132,6 +133,7 @@ export class AuthService {
         },
       );
       const exists = await this.userModel.findOne({ email: decoded.email });
+
       if (exists) {
         throw new ConflictException('هذا البريد مسجّل بالفعل 🚫');
       }
@@ -143,9 +145,24 @@ export class AuthService {
         university: decoded.university,
       });
 
+      const newToken = await this.generateJwtToken({
+        id: newUser._id.toString(),
+        role: newUser.role,
+        email: newUser.email,
+      });
+
+      await this.notificationService.create({
+        userId: newUser._id.toString(),
+        title: '🎉 تم تفعيل حسابك بنجاح!',
+        message:
+          'أهلاً وسهلاً بك في +A! تم تفعيل حسابك بنجاح، ويمكنك الآن الاستمتاع بكامل مزايا المنصة واستكشاف المحتوى المميز 🚀✨',
+        type: 'success',
+      });
+
       return response({
         message: '🎊 تم تفعيل حسابك بنجاح! يمكنك الآن استخدام المنصه 🚀',
-        data: [{ id: newUser._id, email: newUser.email }],
+        data: newUser,
+        token: newToken,
         statusCode: 201,
       });
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -176,6 +193,7 @@ export class AuthService {
       userId: user?._id.toString(),
       title: 'تسجيل دخول ناجح 🎉',
       message: `مرحباً ${user.fullName || 'بك'}! سعداء بعودتك معنا 🌟`,
+      type: 'success',
     });
 
     const payload: JwtPayload = {
@@ -185,12 +203,7 @@ export class AuthService {
     };
 
     const token = await this.generateJwtToken(payload);
-    // res.cookie('token', token, {
-    //   httpOnly: true,
-    //   expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30),
-    //   secure: this.config.get<string>('NODE_ENV') === 'production',
-    //   path: '/',
-    // });
+
     return response({
       message: 'مرحباً بعودتك! تم تسجيل الدخول بنجاح ✅',
       token,
@@ -205,6 +218,7 @@ export class AuthService {
    */
   public async forgetPassword(email: string) {
     const user = await this.userModel.findOne({ email });
+
     if (!user) {
       throw new NotFoundException(
         'لم يتم العثور على حساب بهذا البريد الإلكتروني 📭',
@@ -225,8 +239,8 @@ export class AuthService {
         }/reset-password?userId=${user?._id}&resetPasswordToken=${user.resetPasswordToken}`,
       });
     } catch (error) {
-      console.error(` Failed to send reset email to ${error}`);
-      throw new BadRequestException('تعذر إرسال رابط إعادة التعيين 😔');
+      throw new InternalServerErrorException(error);
+      throw new BadRequestException();
     }
 
     return response({
@@ -425,5 +439,11 @@ export class AuthService {
    */
   private generateJwtToken(payload: JwtPayload): Promise<string> {
     return this.jwtService.signAsync(payload);
+  }
+
+  private verifyToken(token: string): Promise<JwtPayload> {
+    return this.jwtService.verifyAsync(token, {
+      secret: this.config.get<string>('JWT_SECRET'),
+    });
   }
 }
