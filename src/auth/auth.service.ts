@@ -498,7 +498,6 @@ export class AuthService {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'none',
-      domain: 'aplusplatformsa.com',
       maxAge: 1000 * 60 * 60 * 7,
     });
   }
