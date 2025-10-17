@@ -383,31 +383,40 @@ export class AuthService {
     });
   }
 
-  public async googleLogin(req: GoogleAuthRequest) {
+  public async googleLogin(req: GoogleAuthRequest, res: Response) {
     if (!req.user) {
       return 'No user from Google';
     }
 
     const userData = req.user;
 
-    let user = await this.userModel.findOne({ email: userData.email });
+    const user = await this.userModel.findOne({ email: userData.email });
 
-    if (!user) {
-      user = await this.userModel.create({
-        fullName: `${userData.firstName} ${userData.lastName}`,
-        email: userData.email,
-        role: 'student',
-        provider: 'google',
-      });
+    if (user) {
+      throw new BadRequestException('User already exists');
     }
 
-    const payload: JwtPayload = {
-      id: user._id.toString(),
-      role: user.role,
+    const newUser = await this.userModel.create({
+      fullName: `${userData.firstName} ${userData.lastName}`,
       email: userData.email,
+      role: 'student',
+      provider: 'google',
+    });
+
+    const payload: JwtPayload = {
+      id: newUser._id.toString(),
+      role: newUser.role,
+      email: newUser.email,
     };
 
     const token = await this.generateJwtToken(payload);
+
+    res.cookie('access_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 1000 * 60 * 60 * 24 * 7,
+    });
 
     return response({
       message: 'User authenticated successfully',

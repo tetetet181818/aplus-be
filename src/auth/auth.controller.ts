@@ -23,8 +23,9 @@ import { CurrentUser } from './decorators/current-user.decorator';
 import type { JwtPayload } from '../utils/types';
 import type { GoogleAuthRequest } from '../utils/types';
 import { GoogleAuthGuard } from '../guards/google-auth.guard';
-import type { Response } from 'express';
 import { ConfigService } from '@nestjs/config';
+import type { Response } from 'express';
+
 @Controller('/api/v1/auth')
 export class AuthController {
   constructor(
@@ -123,21 +124,7 @@ export class AuthController {
     @Req() req: GoogleAuthRequest,
     @Res() res: Response,
   ) {
-    const resLogin = await this.authService.googleLogin(req);
-    if (typeof resLogin === 'object' && 'token' in resLogin) {
-      res.cookie('access_token', resLogin.token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 1000 * 60 * 60 * 24 * 7,
-      });
-
-      if (typeof res === 'object' && resLogin.token) {
-        res.redirect(
-          `${this.config.get<string>('FRONTEND_SERVER_PRODUCTION')}/google-callback?token=${resLogin?.token}`,
-        );
-      }
-      return resLogin;
-    }
+    await this.authService.googleLogin(req, res);
+    res.redirect(`${this.config.get<string>('FRONTEND_SERVER_PRODUCTION')}/`);
   }
 }
