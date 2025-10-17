@@ -23,6 +23,7 @@ import { ResetPasswordDto } from './dtos/reset-password.dto';
 import { Note } from '../schemas/note.schema';
 import { NotificationService } from '../notification/notification.service';
 import type { Response } from 'express';
+import { COOKIE_NAME } from '../utils/constants';
 
 /**
  * Temporary payload stored inside the verification token.
@@ -69,7 +70,7 @@ export class AuthService {
     }
 
     return response({
-      message: 'تم العثور على المستخدم ✅',
+      message: 'تم العثور على المستخدم',
       statusCode: 200,
       data: user,
     });
@@ -493,11 +494,11 @@ export class AuthService {
   }
 
   private setCookies(res: Response, token: string) {
-    res.cookie('token', token, {
+    res.cookie(COOKIE_NAME, token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 1000 * 60 * 60 * 7, // 7 day
+      sameSite: 'none',
+      maxAge: 1000 * 60 * 60 * 7,
     });
   }
 }
