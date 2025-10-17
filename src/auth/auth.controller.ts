@@ -124,7 +124,21 @@ export class AuthController {
     @Req() req: GoogleAuthRequest,
     @Res() res: Response,
   ) {
-    await this.authService.googleLogin(req, res);
-    res.redirect(`${this.config.get<string>('FRONTEND_SERVER_PRODUCTION')}/`);
+    const resLogin = await this.authService.googleLogin(req);
+    if (typeof resLogin === 'object' && 'token' in resLogin) {
+      res.cookie('access_token', resLogin.token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 1000 * 60 * 60 * 24 * 7,
+      });
+
+      if (typeof res === 'object' && resLogin.token) {
+        res.redirect(
+          `${this.config.get<string>('FRONTEND_SERVER_PRODUCTION')}/google-callback?token=${resLogin?.token}`,
+        );
+      }
+      return resLogin;
+    }
   }
 }
