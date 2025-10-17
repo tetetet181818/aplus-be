@@ -85,12 +85,20 @@ export class AuthService {
     const { fullName, email, password, university } = body;
 
     const user = await this.userModel.findOne({ email });
+
     if (user) {
       throw new ConflictException(
         'هذا البريد الإلكتروني مستخدم بالفعل، جرّب بريد آخر 💌',
       );
     }
 
+    const existingName = await this.userModel.findOne({ fullName });
+
+    if (existingName) {
+      throw new ConflictException(
+        'اسم المستخدم مستخدم بالفعل، جرّب اسم آخر ✍️',
+      );
+    }
     const hashedPassword = await this.hashPassword(password || '');
 
     const payload = {
