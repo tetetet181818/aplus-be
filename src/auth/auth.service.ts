@@ -219,7 +219,7 @@ export class AuthService {
     res.clearCookie(COOKIE_NAME, {
       httpOnly: true,
       secure: this.config.get('NODE_ENV') === 'production',
-      sameSite: 'lax',
+      sameSite: 'none',
       maxAge: 1000 * 60 * 60 * 24 * 7,
     });
     return response({
@@ -496,7 +496,7 @@ export class AuthService {
   private setCookies(res: Response, token: string) {
     return res.cookie(COOKIE_NAME, token, {
       httpOnly: true,
-      sameSite: 'lax',
+      sameSite: 'none',
       secure: true,
       maxAge: 1000 * 60 * 60 * 7,
     });
