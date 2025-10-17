@@ -90,8 +90,7 @@ export class AuthService {
       );
     }
 
-    const salt = await bcrypt.genSalt();
-    const hashedPassword = await bcrypt.hash(password || '', salt);
+    const hashedPassword = await this.hashPassword(password || '');
 
     const payload = {
       fullName,
@@ -157,19 +156,11 @@ export class AuthService {
 
       const newToken = await this.generateJwtToken({
         id: newUser._id.toString(),
-        fullName: decoded.fullName,
-        email: decoded.email,
-        password: decoded.password,
-        university: decoded.university,
-        role: decoded.role,
+        email: newUser.email,
+        role: newUser.role,
       });
 
-      res.cookie('access_token', newToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'none',
-        maxAge: 1000 * 60 * 60 * 24 * 7,
-      });
+      this.setCookies(res, newToken);
 
       return response({
         message: '🎊 تم تفعيل حسابك بنجاح! يمكنك الآن استخدام المنصه 🚀',
@@ -196,6 +187,7 @@ export class AuthService {
     }
 
     const isMatch = await bcrypt.compare(password, user.password || '');
+
     if (!isMatch) {
       throw new UnauthorizedException('بيانات الدخول غير صحيحة ❌');
     }
@@ -214,23 +206,21 @@ export class AuthService {
     };
 
     const token = await this.generateJwtToken(payload);
-
-    res.cookie('access_token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'none',
-      maxAge: 1000 * 60 * 60 * 24 * 7,
-    });
+    this.setCookies(res, token);
 
     return response({
       message: 'مرحباً بعودتك! تم تسجيل الدخول بنجاح ✅',
-      token,
       statusCode: 200,
     });
   }
 
   public logout(res: Response) {
-    res.clearCookie('access_token');
+    res.clearCookie('token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 1000 * 60 * 60 * 24 * 7,
+    });
     return response({
       message: 'تم تسجيل الخروج بنجاح ✅',
       statusCode: 200,
@@ -252,6 +242,7 @@ export class AuthService {
     }
 
     user.resetPasswordToken = randomBytes(32).toString('hex');
+    user.resetPasswordExpires = Date.now() + 5 * 60 * 1000;
     await user.save();
 
     try {
@@ -266,7 +257,6 @@ export class AuthService {
       });
     } catch (error) {
       throw new InternalServerErrorException(error);
-      throw new BadRequestException();
     }
 
     return response({
@@ -289,7 +279,8 @@ export class AuthService {
 
       if (
         user.resetPasswordToken === null ||
-        user.resetPasswordToken !== resetPasswordToken
+        user.resetPasswordToken !== resetPasswordToken ||
+        user.resetPasswordExpires < Date.now()
       ) {
         throw new BadRequestException(
           'رابط إعادة التعيين غير صالح أو منتهي ⏳',
@@ -322,11 +313,16 @@ export class AuthService {
    */
   public async deleteAccount(userId: string) {
     const user = await this.userModel.findById(userId);
+
     if (!user) {
       throw new NotFoundException('الحساب غير موجود ❌');
     }
 
-    await this.userModel.findByIdAndDelete(userId);
+    const deletedUser = await this.userModel.findByIdAndDelete(userId);
+
+    if (!deletedUser) {
+      throw new BadRequestException('حدث خطاء في حذف الحساب');
+    }
 
     return response({
       message: 'تم حذف الحساب نهائياً، نتمنى لك التوفيق 🍀',
@@ -335,7 +331,7 @@ export class AuthService {
   }
 
   /**
-   * Update user information (name, university, password).
+   * Update user information (university).
    */
   public async updateUser(userId: string, body: UpdateUserDto) {
     const user = await this.userModel.findById(userId);
@@ -362,6 +358,9 @@ export class AuthService {
    * @throws NotFoundException if user does not exist.
    */
   public async getUserById(userId: string) {
+    if (!userId) {
+      throw new UnauthorizedException('المستخدم غير موجود 🚫');
+    }
     // Find user without password
     const user = await this.userModel
       .findById(userId)
@@ -384,7 +383,7 @@ export class AuthService {
     });
   }
 
-  public async googleLogin(req: GoogleAuthRequest) {
+  public async googleLogin(req: GoogleAuthRequest, res: Response) {
     if (!req.user) {
       return 'No user from Google';
     }
@@ -409,19 +408,12 @@ export class AuthService {
     };
 
     const token = await this.generateJwtToken(payload);
-
+    this.setCookies(res, token);
     return response({
       message: 'User authenticated successfully',
       data: user,
-      token,
       statusCode: 200,
     });
-  }
-
-  public async validGoogleUser(googleUser: RegisterDto) {
-    const user = await this.userModel.findOne({ email: googleUser.email });
-    if (user) return user;
-    return await this.userModel.create(googleUser);
   }
 
   public async getAllUsers(page: number, limit: number, fullName: string) {
@@ -460,6 +452,26 @@ export class AuthService {
     });
   }
 
+  public async validGoogleUser({
+    email,
+    fullName,
+  }: {
+    email: string;
+    fullName: string;
+  }) {
+    const user = await this.userModel.findOne({ email });
+    if (user) {
+      return user;
+    }
+
+    return await this.userModel.create({
+      fullName,
+      email,
+      role: 'student',
+      provider: 'google',
+    });
+  }
+
   /**
    * Generate JWT token for authenticated user.
    */
@@ -473,6 +485,19 @@ export class AuthService {
   private verifyToken(token: string): Promise<JwtPayload> {
     return this.jwtService.verifyAsync(token, {
       secret: this.config.get<string>('JWT_SECRET'),
+    });
+  }
+
+  private async hashPassword(password: string): Promise<string> {
+    return await bcrypt.hash(password, 10);
+  }
+
+  private setCookies(res: Response, token: string) {
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 1000 * 60 * 60 * 7, // 7 day
     });
   }
 }

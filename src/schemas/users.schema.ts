@@ -40,6 +40,9 @@ export class User {
   @Prop({ type: Date, default: () => new Date() })
   lastWithdrawalReset: Date;
 
+  @Prop({ type: Number })
+  resetPasswordExpires: number;
+
   @Prop({ default: 'local' })
   provider: 'local' | 'google';
 }
