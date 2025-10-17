@@ -22,7 +22,11 @@ import { User } from '../schemas/users.schema';
 import { ConfigService } from '@nestjs/config';
 import { NotificationService } from '../notification/notification.service';
 import { SalesService } from '../sales/sales.service';
-import { PLATFORM_DECREMENT_PERCENT, PLATFORM_FREE } from '../utils/constants';
+import {
+  PLATFORM_DECREMENT_PAYMENT_PERCENT,
+  PLATFORM_DECREMENT_PERCENT,
+  PLATFORM_FREE,
+} from '../utils/constants';
 import { UpdateNoteDto } from './dtos/update.note.dto';
 import { Express } from 'express';
 import type { Response } from 'express';
@@ -487,7 +491,11 @@ export class NotesService {
       sellerId: note.owner_id.toString(),
       buyerId: userId,
       note_id: noteId,
-      amount: note.price - PLATFORM_DECREMENT_PERCENT * note.price,
+      amount:
+        note.price -
+        PLATFORM_DECREMENT_PERCENT * note.price -
+        2 -
+        PLATFORM_DECREMENT_PAYMENT_PERCENT * note.price,
       commission: PLATFORM_DECREMENT_PERCENT * note.price,
       payment_method: 'credit_card',
       note_title: note.title,
@@ -516,7 +524,11 @@ export class NotesService {
       throw new NotFoundException('المستخدم غير موجود');
     }
 
-    seller.balance += note.price - PLATFORM_DECREMENT_PERCENT * note.price;
+    seller.balance +=
+      note.price -
+      PLATFORM_DECREMENT_PERCENT * note.price -
+      2 -
+      PLATFORM_DECREMENT_PAYMENT_PERCENT * note.price;
     await seller.save();
 
     return response({

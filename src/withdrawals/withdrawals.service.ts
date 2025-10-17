@@ -138,13 +138,15 @@ export class WithdrawalsService {
   }
 
   public async deleteWithdrawal(id: string) {
-    if (!id || !Types.ObjectId.isValid(id)) {
-      throw new NotFoundException('حدث خطأ أثناء جلب التحويل');
+    if (!id) {
+      throw new NotFoundException('حدث خطأ أثناء جلب طلب السحب');
     }
 
-    const withdrawal = await this.withdrawalModel.findByIdAndDelete(id).lean();
+    const deletedWithdrawal = await this.withdrawalModel
+      .findByIdAndDelete(id)
+      .lean();
 
-    if (!withdrawal) {
+    if (!deletedWithdrawal) {
       throw new NotFoundException('حدث خطأ أثناء حذف التحويل');
     }
 
