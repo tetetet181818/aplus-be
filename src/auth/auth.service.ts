@@ -216,9 +216,9 @@ export class AuthService {
   }
 
   public logout(res: Response) {
-    res.clearCookie('token', {
+    res.clearCookie(COOKIE_NAME, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: this.config.get('NODE_ENV') === 'production',
       sameSite: 'lax',
       maxAge: 1000 * 60 * 60 * 24 * 7,
     });
@@ -494,10 +494,10 @@ export class AuthService {
   }
 
   private setCookies(res: Response, token: string) {
-    res.cookie(COOKIE_NAME, token, {
+    return res.cookie(COOKIE_NAME, token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'none',
+      sameSite: 'lax',
+      secure: true,
       maxAge: 1000 * 60 * 60 * 7,
     });
   }
