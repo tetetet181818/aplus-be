@@ -418,6 +418,8 @@ export class AuthService {
 
     const token = await this.generateJwtToken(payload);
     this.setCookies(res, token);
+
+    res.redirect(`${this.config.get<string>('FRONTEND_SERVER_PRODUCTION')}/`);
     return response({
       message: 'User authenticated successfully',
       data: user,

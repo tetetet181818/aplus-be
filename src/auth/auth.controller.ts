@@ -124,11 +124,6 @@ export class AuthController {
     @Req() req: GoogleAuthRequest,
     @Res() res: Response,
   ) {
-    const response = await this.authService.googleLogin(req, res);
-    if (response) {
-      return res.redirect(
-        `${this.config.get<string>('FRONTEND_SERVER_PRODUCTION')}/`,
-      );
-    }
+    return await this.authService.googleLogin(req, res);
   }
 }
