@@ -12,6 +12,7 @@ import { CreateWithdrawalDto } from './dtos/create-withdrawals.dto';
 import { UpdateWithdrawalDto } from './dtos/update-withdrawals.dto';
 import { User } from '../schemas/users.schema';
 import { NotificationService } from '../notification/notification.service';
+import { AddAdminNoteDto } from './dtos/add-admin-note.dto';
 
 @Injectable()
 export class WithdrawalsService {
@@ -177,5 +178,32 @@ export class WithdrawalsService {
     } catch (error) {
       throw new InternalServerErrorException('حدث خطأ أثناء جلب التحويلات');
     }
+  }
+
+  public async addAdminNote(id: string, body: AddAdminNoteDto) {
+    if (!id) {
+      throw new NotFoundException('حدث خطأ أثناء جلب التحويل');
+    }
+
+    const withdrawal = await this.withdrawalModel.findById(id);
+    if (!withdrawal) {
+      throw new NotFoundException('حدث خطأ أثناء جلب التحويل');
+    }
+
+    const updatedWithdrawal = await this.withdrawalModel.findByIdAndUpdate(
+      id,
+      { $set: { adminNotes: body.adminNotes } },
+      { new: true },
+    );
+
+    if (!updatedWithdrawal) {
+      throw new NotFoundException('حدث خطأ أثناء تحديث التحويل');
+    }
+
+    return response({
+      message: 'تم تحديث التحويل بنجاح',
+      statusCode: 200,
+      data: updatedWithdrawal,
+    });
   }
 }

@@ -14,6 +14,7 @@ import { UpdateWithdrawalDto } from './dtos/update-withdrawals.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { JwtPayload } from '../utils/types';
+import { AddAdminNoteDto } from './dtos/add-admin-note.dto';
 
 @Controller('/api/v1/withdrawals')
 export class WithdrawalsController {
@@ -45,7 +46,7 @@ export class WithdrawalsController {
   public getSingleWithdrawal(@Param('id') id: string) {
     return this.withdrawalsService.getSingleWithdrawal(id);
   }
-  @Put('/:id')
+  @Put('/update/:id')
   @UseGuards(AuthGuard)
   public updateWithdrawal(
     @Param('id') id: string,
@@ -58,5 +59,11 @@ export class WithdrawalsController {
   @UseGuards(AuthGuard)
   public deleteWithdrawal(@Param('id') id: string) {
     return this.withdrawalsService.deleteWithdrawal(id);
+  }
+
+  @Put('/add-admin-note/:id')
+  @UseGuards(AuthGuard)
+  public addAdminNote(@Param('id') id: string, @Body() body: AddAdminNoteDto) {
+    return this.withdrawalsService.addAdminNote(id, body);
   }
 }
