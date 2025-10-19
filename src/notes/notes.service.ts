@@ -131,49 +131,6 @@ export class NotesService {
   }
 
   /**
-   * Retrieves all purchased notes for a specific user,
-   * along with their related sales records.
-   */
-  public async getPurchasedNotes(userId: string) {
-    // Get all notes purchased by the user
-    const notes = await this.noteModel
-      .find({
-        purchased_by: { $in: [userId] },
-      })
-      .select('-__v -reviews -purchased_by')
-      .sort({ createdAt: -1 })
-      .lean();
-
-    if (!notes) {
-      throw new NotFoundException('لم تقم بشراء أي ملخصات بعد');
-    }
-
-    // Get all sales linked to those notes
-    const sales = await this.saleModel
-      .find({
-        note_id: { $in: notes.map((note) => note._id) },
-        buyerId: userId,
-      })
-      .lean();
-
-    const notesWithSales = notes.map((note) => {
-      const sale = sales.find(
-        (s) => s.note_id.toString() === note._id.toString(),
-      );
-      return {
-        ...note,
-        saleId: sale?._id || null,
-      };
-    });
-
-    return response({
-      message: 'تم جلب جميع الملخصات التي قمت بشرائها بنجاح',
-      statusCode: 200,
-      data: notesWithSales.length > 0 ? notesWithSales : [],
-    });
-  }
-
-  /**
    * Retrieves all notes with optional filtering, pagination, and sorting.
    * Supports case-insensitive title search.
    * Can sort primarily by maxDownloads, maxPrice, or minPrice.
@@ -369,6 +326,7 @@ export class NotesService {
     },
   ) {
     const note = await this.noteModel.findById(noteId);
+
     if (!note) {
       throw new NotFoundException('الملخص المطلوب غير موجود');
     }
@@ -388,9 +346,6 @@ export class NotesService {
     await note.save();
     const user = await this.usersModel.findById(review.userId);
 
-    if (!user) {
-      throw new NotFoundException('المستخدم غير موجود');
-    }
     await this.notificationService.create({
       userId: user?._id.toString() || '',
       title: 'تم إضافة تقييم جديد 🎉',
@@ -400,7 +355,7 @@ export class NotesService {
     return response({
       message: 'تم إضافة المراجعة بنجاح',
       statusCode: 201,
-      data: [newReview],
+      data: newReview,
     });
   }
 
@@ -487,7 +442,7 @@ export class NotesService {
     }
 
     // create sales partion
-    await this.salesService.createSale({
+    const newSale = await this.salesService.createSale({
       sellerId: note.owner_id.toString(),
       buyerId: userId,
       note_id: noteId,
@@ -531,6 +486,40 @@ export class NotesService {
       PLATFORM_DECREMENT_PAYMENT_PERCENT * note.price;
     await seller.save();
 
+    // add note to purchased_notes in user
+    const user = await this.usersModel.findById(userId);
+
+    if (!user) {
+      throw new NotFoundException('المستخدم غير موجود');
+    }
+
+    const updatePurchasedNotes = await this.usersModel.updateOne(
+      { _id: userId },
+      {
+        $push: {
+          purchased_notes: {
+            _id: noteId,
+            title: note.title,
+            price: note.price,
+            owner_id: note.owner_id,
+            cover_url: note.cover_url,
+            file_path: note.file_path,
+            downloads: note.downloads,
+            year: note.year,
+            subject: note.subject,
+            university: note.university,
+            college: note.college,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+            saleId: (newSale as any)?._id,
+            description: note.description,
+          },
+        },
+      },
+    );
+
+    if (!updatePurchasedNotes) {
+      throw new NotFoundException('حدث خطاء اثناء شراء الملخص');
+    }
     return response({
       message: 'تم شراء الملخص بنجاح',
       statusCode: 200,

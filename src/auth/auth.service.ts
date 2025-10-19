@@ -167,6 +167,7 @@ export class AuthService {
         id: newUser._id.toString(),
         email: newUser.email,
         role: newUser.role,
+        fullName: newUser.fullName,
       });
 
       this.setCookies(res, newToken);
@@ -212,6 +213,7 @@ export class AuthService {
       id: user._id.toString(),
       role: user.role,
       email: user.email,
+      fullName: user.fullName,
     };
 
     const token = await this.generateJwtToken(payload);
@@ -436,6 +438,14 @@ export class AuthService {
 
     if (fullName) {
       filters.fullName = { $regex: fullName, $options: 'i' };
+    }
+
+    if (!fullName || fullName.trim() === '') {
+      return response({
+        message: 'يرجى إدخال اسم المستخدم للبحث',
+        data: { data: [], pagnation: null },
+        statusCode: 200,
+      });
     }
 
     const users = await this.userModel

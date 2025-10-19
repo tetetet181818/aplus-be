@@ -70,12 +70,6 @@ export class NotesController {
     return this.notesService.getUserNotes(payload.id || '');
   }
 
-  @Get('/purchased')
-  @UseGuards(AuthGuard)
-  public getPurchasedNotes(@CurrentUser() payload: JwtPayload) {
-    return this.notesService.getPurchasedNotes(payload.id || '');
-  }
-
   @Get('/likes-notes')
   @UseGuards(AuthGuard)
   public getLikesNotes(@CurrentUser() payload: JwtPayload) {
@@ -139,7 +133,7 @@ export class NotesController {
       rating: body.rating,
       comment: body.comment,
       userId: payload.id || '',
-      userName: payload.email,
+      userName: payload.fullName || '',
     });
   }
 

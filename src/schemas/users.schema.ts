@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 export type UserDocument = User & Document;
 
@@ -45,6 +45,40 @@ export class User {
 
   @Prop({ default: 'local' })
   provider: 'local' | 'google';
+
+  @Prop({
+    type: [
+      {
+        note_id: { type: Types.ObjectId, ref: 'Note' },
+        title: String,
+        price: Number,
+        owner_id: { type: Types.ObjectId, ref: 'User' },
+        cover_url: String,
+        downloads: Number,
+        year: String,
+        subject: String,
+        university: String,
+        college: String,
+        saleId: { type: Types.ObjectId, ref: 'Sale' },
+        description: String,
+      },
+    ],
+    default: [],
+  })
+  purchased_notes: Array<{
+    note_id: string;
+    title: string;
+    price: number;
+    owner_id: string;
+    cover_url: string;
+    downloads: number;
+    year: string;
+    subject: string;
+    university: string;
+    college: string;
+    saleId: string;
+    description: string;
+  }>;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
