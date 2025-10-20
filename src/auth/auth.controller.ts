@@ -109,7 +109,6 @@ export class AuthController {
   }
 
   @Get('/:id')
-  @UseGuards(AuthGuard)
   public getUserById(@Param('id') id: string) {
     return this.authService.getUserById(id);
   }
