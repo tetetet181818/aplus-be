@@ -85,24 +85,27 @@ export class AuthService {
     const { fullName, email, password, university } = body;
 
     const user = await this.userModel.findOne({ email });
-
     if (user) {
       throw new ConflictException(
         'هذا البريد الإلكتروني مستخدم بالفعل، جرّب بريد آخر 💌',
       );
     }
 
-    const existingName = await this.userModel.findOne({ fullName });
+    let finalFullName = fullName.trim().replace(/\s+/g, '');
+    const existingUser = await this.userModel.findOne({
+      fullName: finalFullName,
+    });
 
-    if (existingName) {
-      throw new ConflictException(
-        'اسم المستخدم مستخدم بالفعل، جرّب اسم آخر ✍️',
-      );
+    if (existingUser) {
+      const randomSuffix = Math.random().toString(36).substring(2, 6);
+      const randomNumber = Math.floor(Math.random() * 9999);
+      finalFullName = `${finalFullName}_${randomSuffix}${randomNumber}`;
     }
+
     const hashedPassword = await this.hashPassword(password || '');
 
     const payload = {
-      fullName,
+      fullName: finalFullName,
       email,
       password: hashedPassword,
       university,
@@ -121,12 +124,12 @@ export class AuthService {
         }/verify?token=${token}`,
       });
     } catch (error) {
-      console.error(`❌ Failed to send email to ${error}`);
+      console.error(`❌ Failed to send email: ${error}`);
       throw new BadRequestException('حدث خطأ أثناء إرسال البريد الإلكتروني 😢');
     }
 
     return response({
-      message: 'تم إنشاء الحساب! تحقق من بريدك الإلكتروني لتفعيله 🎉',
+      message: `تم إنشاء الحساب باسم المستخدم: ${finalFullName} ✅ تحقق من بريدك الإلكتروني لتفعيله 🎉`,
       statusCode: 201,
     });
   }
@@ -226,12 +229,7 @@ export class AuthService {
   }
 
   public logout(res: Response) {
-    res.clearCookie(COOKIE_NAME, {
-      httpOnly: true,
-      secure: this.config.get('NODE_ENV') === 'production',
-      sameSite: 'none',
-      maxAge: 1000 * 60 * 60 * 24 * 7,
-    });
+    this.removeCookies(res);
     return response({
       message: 'تم تسجيل الخروج بنجاح ✅',
       statusCode: 200,
@@ -480,17 +478,35 @@ export class AuthService {
     email: string;
     fullName: string;
   }) {
-    const user = await this.userModel.findOne({ email });
-    if (user) {
-      return user;
+    // check if user already exists by email
+    const existingUser = await this.userModel.findOne({ email });
+    if (existingUser) return existingUser;
+
+    // clean and normalize name
+    let baseName = fullName?.replace(/\s+/g, '').toLowerCase();
+
+    // if name somehow empty, use part of email
+    if (!baseName || baseName.length < 3) {
+      baseName = email.split('@')[0];
     }
 
-    return await this.userModel.create({
-      fullName,
+    let uniqueName = baseName;
+    let isTaken = await this.userModel.findOne({ fullName: uniqueName });
+
+    while (isTaken) {
+      const randomSuffix = Math.floor(Math.random() * 9000 + 1000);
+      uniqueName = `${baseName}_${randomSuffix}`;
+      isTaken = await this.userModel.findOne({ fullName: uniqueName });
+    }
+
+    const newUser = await this.userModel.create({
+      fullName: uniqueName,
       email,
       role: 'student',
       provider: 'google',
     });
+
+    return newUser;
   }
 
   /**
@@ -517,8 +533,18 @@ export class AuthService {
     return res.cookie(COOKIE_NAME, token, {
       httpOnly: true,
       sameSite: 'none',
-      secure: true,
+      secure: this.config.get<string>('NODE_ENV') === 'production',
       maxAge: 1000 * 60 * 60 * 7,
+      path: '/',
+    });
+  }
+  private removeCookies(res: Response) {
+    return res.clearCookie(COOKIE_NAME, {
+      httpOnly: true,
+      sameSite: 'none',
+      secure: this.config.get<string>('NODE_ENV') === 'production',
+      maxAge: 1000 * 60 * 60 * 7,
+      path: '/',
     });
   }
 }
