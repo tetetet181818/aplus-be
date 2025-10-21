@@ -533,18 +533,16 @@ export class AuthService {
     return res.cookie(COOKIE_NAME, token, {
       httpOnly: true,
       sameSite: 'none',
-      secure: this.config.get<string>('NODE_ENV') === 'production',
+      secure: true,
       maxAge: 1000 * 60 * 60 * 7,
-      path: '/',
     });
   }
   private removeCookies(res: Response) {
     return res.clearCookie(COOKIE_NAME, {
       httpOnly: true,
       sameSite: 'none',
-      secure: this.config.get<string>('NODE_ENV') === 'production',
+      secure: true,
       maxAge: 1000 * 60 * 60 * 7,
-      path: '/',
     });
   }
 }
