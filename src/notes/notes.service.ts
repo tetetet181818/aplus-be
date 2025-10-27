@@ -54,11 +54,14 @@ export class NotesService {
   ) {
     try {
       if (!userId) {
-        throw new BadRequestException('معرف المستخدم مطلوب');
+        throw new BadRequestException(
+          'معرف المستخدم غير موجود، يرجى تسجيل الدخول أولاً',
+        );
       }
+
       let uploadImage: UploadApiResponse | null = null;
       let uploadFilePdf: UploadApiResponse | null = null;
-      // upload image to cloudanry
+
       if (image) {
         uploadImage = await this.uploadImage(image);
       }
@@ -66,6 +69,7 @@ export class NotesService {
       if (file) {
         uploadFilePdf = await this.uploadFile(file);
       }
+
       const noteData: Partial<Note> = {
         owner_id: userId,
         ...(uploadFilePdf && { file_path: uploadFilePdf.secure_url }),
@@ -78,19 +82,21 @@ export class NotesService {
       const newNote = await this.noteModel.create(noteData);
 
       if (!newNote) {
-        throw new InternalServerErrorException('فشل في إنشاء الملخص');
+        throw new InternalServerErrorException(
+          'حدث خلل غير متوقع أثناء إنشاء الملخص، حاول مجددًا بعد قليل',
+        );
       }
 
       await this.notificationService.create({
         userId,
-        title: 'تم انشاء ملخص جديد',
-        message: `تم انشاء ملخص جديد بنجاح باسم ${newNote.title}`,
+        title: 'ملخص جديد',
+        message: `تم إنشاء الملخص "${newNote.title}" بنجاح 🎉`,
         type: 'notes',
       });
 
       return response({
         data: newNote,
-        message: 'تم إنشاء الملخص بنجاح، يمكنك الآن عرضه أو تعديله',
+        message: 'تم إنشاء الملخص بنجاح، يمكنك الآن عرضه أو تعديله حسب رغبتك',
         statusCode: 201,
       });
     } catch (err: unknown) {
@@ -110,22 +116,24 @@ export class NotesService {
         typeof (err as { message?: unknown }).message === 'string'
       ) {
         throw new BadRequestException(
-          `بيانات غير صالحة: ${(err as { message: string }).message}`,
+          `بعض البيانات غير صحيحة: ${(err as { message: string }).message}`,
         );
       }
 
-      // Handle MongoDB duplicate key
       if (
         typeof err === 'object' &&
         err !== null &&
         'code' in err &&
         (err as { code?: unknown }).code === 11000
       ) {
-        throw new BadRequestException('الملف موجود مسبقاً');
+        throw new BadRequestException(
+          'هذا الملف موجود بالفعل، حاول باسم مختلف',
+        );
       }
 
+      console.error('Unexpected error in createNote:', err);
       throw new InternalServerErrorException(
-        'خطأ في الخادم أثناء إنشاء الملخص',
+        'عذرًا، حدث خطأ غير متوقع أثناء إنشاء الملخص. الرجاء المحاولة لاحقًا',
       );
     }
   }
@@ -429,6 +437,7 @@ export class NotesService {
     body: { invoice_id: string; status?: string },
   ) {
     const note = await this.noteModel.findById(noteId);
+
     if (!note) {
       throw new NotFoundException('الملخص المطلوب غير موجود');
     }
@@ -451,7 +460,10 @@ export class NotesService {
         PLATFORM_DECREMENT_PERCENT * note.price -
         2 -
         PLATFORM_DECREMENT_PAYMENT_PERCENT * note.price,
-      commission: PLATFORM_DECREMENT_PERCENT * note.price,
+      commission:
+        PLATFORM_DECREMENT_PERCENT * note.price +
+        2 +
+        PLATFORM_DECREMENT_PAYMENT_PERCENT * note.price,
       payment_method: 'credit_card',
       note_title: note.title,
       invoice_id: body.invoice_id,
@@ -493,6 +505,11 @@ export class NotesService {
       throw new NotFoundException('المستخدم غير موجود');
     }
 
+    const saleId =
+      (newSale.data && typeof newSale.data === 'object' && '_id' in newSale.data
+        ? (newSale.data as { _id: Types.ObjectId | string })._id.toString()
+        : '') || '';
+
     const updatePurchasedNotes = await this.usersModel.updateOne(
       { _id: userId },
       {
@@ -509,8 +526,7 @@ export class NotesService {
             subject: note.subject,
             university: note.university,
             college: note.college,
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-            saleId: (newSale as any)?._id,
+            saleId: saleId,
             description: note.description,
           },
         },
@@ -710,7 +726,7 @@ export class NotesService {
   ): Promise<UploadApiResponse> {
     return new Promise<UploadApiResponse>((resolve, reject) => {
       const originalName = file.originalname || 'note.pdf';
-      const baseName = originalName.replace(/\.[^/.]+$/, '');
+      const baseName = originalName.replace(/\.[^/.]+$/, '').trim();
 
       cloudinary.uploader
         .upload_stream(

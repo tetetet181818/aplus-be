@@ -58,8 +58,9 @@ export class User {
         year: String,
         subject: String,
         university: String,
+        file_path: String,
         college: String,
-        saleId: { type: Types.ObjectId, ref: 'Sale' },
+        saleId: String,
         description: String,
       },
     ],
@@ -71,6 +72,7 @@ export class User {
     price: number;
     owner_id: string;
     cover_url: string;
+    file_path: string;
     downloads: number;
     year: string;
     subject: string;
