@@ -12,6 +12,7 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { CustomerRatingModule } from './customer-rating/customer-rating.module';
 @Module({
   controllers: [AppController],
   imports: [
@@ -46,6 +47,7 @@ import { APP_GUARD } from '@nestjs/core';
     CloudinaryModule,
     DashboardModule,
     NotificationModule,
+    CustomerRatingModule,
   ],
 
   providers: [
