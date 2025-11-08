@@ -12,10 +12,14 @@ import { NotificationService } from './notification.service';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { JwtPayload } from '../utils/types';
+import { NotificationGateway } from './notification.gateway';
 
 @Controller('/api/v1/notifications')
 export class NotificationController {
-  constructor(private readonly notificationService: NotificationService) {}
+  constructor(
+    private readonly notificationService: NotificationService,
+    private readonly gateway: NotificationGateway,
+  ) {}
 
   /**  Get all notifications */
   @Get('/')
@@ -45,6 +49,7 @@ export class NotificationController {
   @Delete('/clear-all')
   @UseGuards(AuthGuard)
   async clearAll(@CurrentUser() payload: JwtPayload) {
+    this.gateway.server.emit('clear');
     return this.notificationService.clearAll(payload.id || '');
   }
 
@@ -53,6 +58,7 @@ export class NotificationController {
     @CurrentUser() payload: JwtPayload,
     @Body() body: { title: string; message: string; type?: string },
   ) {
+    this.gateway.emitNewNotification(body);
     return this.notificationService.create({
       userId: payload.id || '',
       title: body.title,

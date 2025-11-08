@@ -96,6 +96,11 @@ export class AuthController {
     return this.authService.updateUser(payload.id, body);
   }
 
+  @Get('/best-sellers')
+  public getBestSellers() {
+    return this.authService.getBestSellers();
+  }
+
   @Get('/all-users')
   @UseGuards(AuthGuard)
   public getAllUsers(

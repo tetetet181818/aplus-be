@@ -11,8 +11,8 @@ export default function response({
 }) {
   return {
     message,
-    data,
     statusCode,
+    data,
     token,
   };
 }

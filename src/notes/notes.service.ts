@@ -693,6 +693,42 @@ export class NotesService {
     });
   }
 
+  public async bestSellersNotes() {
+    const notes = await this.noteModel
+      .find({ isPublish: true })
+      .select(
+        '-purchased_by -termsAccepted -reviews -contactMethod -file_path -__v -updatedAt',
+      )
+      .lean();
+
+    if (!notes || notes.length === 0) {
+      return {
+        message: 'لا توجد ملخصات حالياً.',
+        statusCode: 200,
+        data: [],
+      };
+    }
+
+    const bestSellers = notes
+      .filter((note) => note.downloads > 0)
+      .sort((a, b) => b.downloads - a.downloads)
+      .slice(0, 5);
+
+    if (bestSellers.length === 0) {
+      return {
+        message: 'لا توجد ملخصات ذات تحميلات حالياً.',
+        statusCode: 200,
+        data: [],
+      };
+    }
+
+    return response({
+      message: 'تم جلب أفضل الملخصات مبيعاً بنجاح',
+      statusCode: 200,
+      data: bestSellers,
+    });
+  }
+
   private async uploadImage(
     file: Express.Multer.File,
   ): Promise<UploadApiResponse> {

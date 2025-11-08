@@ -98,6 +98,11 @@ export class NotesController {
     return this.notesService.createNote(body, payload.id || '', image, pdf);
   }
 
+  @Get('/best-sellers-notes')
+  public async bestSellersNotes() {
+    return this.notesService.bestSellersNotes();
+  }
+
   @Put('/update/:id')
   @UseGuards(AuthGuard)
   public updateNote(

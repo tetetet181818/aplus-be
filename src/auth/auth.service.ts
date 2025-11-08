@@ -360,6 +360,26 @@ export class AuthService {
     });
   }
 
+  public async getBestSellers() {
+    const users = await this.userModel
+      .find()
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .select('fullName email university numberOfSales')
+      .lean();
+
+    const bestSellersUsers = users
+      .filter((user) => user.numberOfSales > 0)
+      .sort((a, b) => b.numberOfSales - a.numberOfSales)
+      .slice(0, 5);
+
+    return response({
+      message: 'تم جلب أفضل البائعين بنجاح ✅',
+      statusCode: 200,
+      data: bestSellersUsers,
+    });
+  }
+
   /**
    * Retrieve a user by ID along with all their notes.
    * @param userId - The ID of the user to retrieve.
@@ -537,6 +557,7 @@ export class AuthService {
       maxAge: 1000 * 60 * 60 * 7,
     });
   }
+
   private removeCookies(res: Response) {
     return res.clearCookie(COOKIE_NAME, {
       httpOnly: true,
