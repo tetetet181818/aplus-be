@@ -20,6 +20,9 @@ export class CustomerRating {
 
   @Prop({ type: String, required: true })
   comment: string;
+
+  @Prop({ type: Boolean, default: true })
+  isPublish: boolean;
 }
 
 export const CustomerRatingSchema =

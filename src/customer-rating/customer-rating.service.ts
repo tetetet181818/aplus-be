@@ -50,7 +50,7 @@ export class CustomerRatingService {
 
   async findAll() {
     const allCustomerRatings = await this.customerRatingModel
-      .find()
+      .find({ isPublish: true })
       .sort({ createdAt: -1 })
       .exec();
 
@@ -108,5 +108,62 @@ export class CustomerRatingService {
       .exec();
 
     return !!existingRating;
+  }
+
+  async publishRating(id: string) {
+    const published = await this.customerRatingModel
+      .findByIdAndUpdate(
+        id,
+        { isPublish: true },
+        {
+          new: true,
+        },
+      )
+      .exec();
+
+    if (!published) {
+      throw new NotFoundException('لم يتم العثور على التقييم المطلوب للنشر.');
+    }
+
+    return response({
+      message: 'تم نشر التقييم بنجاح ',
+      statusCode: 200,
+      data: published,
+    });
+  }
+
+  async unPublishRating(id: string) {
+    const unpublished = await this.customerRatingModel
+      .findByIdAndUpdate(
+        id,
+        { isPublish: false },
+        {
+          new: true,
+        },
+      )
+      .exec();
+
+    if (!unpublished) {
+      throw new NotFoundException('لم يتم العثور على التقييم المطلوب للنشر.');
+    }
+
+    return response({
+      message: 'تم الغاء نشر التقييم بنجاح ',
+      statusCode: 200,
+      data: unpublished,
+    });
+  }
+
+  async getCustomerRatingForDashboard() {
+    const customerRating = await this.customerRatingModel
+      .find()
+      .sort({ createdAt: -1 })
+      .exec();
+
+    return response({
+      message: 'تم جلب تقييمات العملاء للوحة التحكم بنجاح',
+      statusCode: 200,
+      data: customerRating,
+    });
   }
 }

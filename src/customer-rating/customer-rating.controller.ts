@@ -38,6 +38,18 @@ export class CustomerRatingController {
     return this.customerRatingService.findAll();
   }
 
+  @Put('/publish/:id')
+  @UseGuards(AuthGuard)
+  publishRating(@Param('id') id: string) {
+    return this.customerRatingService.publishRating(id);
+  }
+
+  @Put('/unpublish/:id')
+  @UseGuards(AuthGuard)
+  unPublishRating(@Param('id') id: string) {
+    return this.customerRatingService.unPublishRating(id);
+  }
+
   @Put('/:id')
   @UseGuards(AuthGuard)
   update(
@@ -47,7 +59,7 @@ export class CustomerRatingController {
     return this.customerRatingService.update(id, updateCustomerRatingDto);
   }
 
-  @Delete('/:id')
+  @Delete('/delete/:id')
   @UseGuards(AuthGuard)
   remove(@Param('id') id: string) {
     return this.customerRatingService.remove(id);
@@ -57,5 +69,10 @@ export class CustomerRatingController {
   @UseGuards(AuthGuard)
   userRatedBefore(@CurrentUser() payload: JwtPayload) {
     return this.customerRatingService.userRatedBefore(payload.id || '');
+  }
+
+  @Get('/get-rating-dashboard')
+  getCustomerRatingForDashboard() {
+    return this.customerRatingService.getCustomerRatingForDashboard();
   }
 }
