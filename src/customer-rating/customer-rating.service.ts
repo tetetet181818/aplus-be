@@ -2,6 +2,8 @@ import {
   Injectable,
   NotFoundException,
   InternalServerErrorException,
+  BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import { CreateCustomerRatingDto } from './dto/create-customer-rating.dto';
 import { UpdateCustomerRatingDto } from './dto/update-customer-rating.dto';
@@ -23,6 +25,26 @@ export class CustomerRatingService {
     createCustomerRatingDto: CreateCustomerRatingDto,
   ) {
     try {
+      if (!customerId || !fullName) {
+        throw new BadRequestException('معلومات العميل مطلوبة لإضافة التقييم.');
+      }
+
+      if (
+        !createCustomerRatingDto ||
+        Object.keys(createCustomerRatingDto).length === 0
+      ) {
+        throw new BadRequestException(
+          'بيانات التقييم غير مكتملة أو غير صحيحة.',
+        );
+      }
+
+      const existingRating = await this.customerRatingModel.findOne({
+        customerId,
+      });
+      if (existingRating) {
+        throw new ConflictException('تمت إضافة تقييم لهذا العميل مسبقًا.');
+      }
+
       const createdRating = await this.customerRatingModel.create({
         customerId,
         fullName,
@@ -40,10 +62,22 @@ export class CustomerRatingService {
         statusCode: 201,
         data: createdRating,
       });
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
+      if (error instanceof BadRequestException) throw error;
+      if (error instanceof ConflictException) throw error;
+
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      if (error.name === 'ValidationError') {
+        throw new BadRequestException('البيانات المرسلة غير صالحة.');
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      if (error.code === 11000) {
+        throw new ConflictException('تم العثور على تقييم مكرر لنفس العميل.');
+      }
+
       throw new InternalServerErrorException(
-        'تعذر إنشاء التقييم في الوقت الحالي.',
+        'تعذر إنشاء التقييم في الوقت الحالي، حاول لاحقًا.',
       );
     }
   }
