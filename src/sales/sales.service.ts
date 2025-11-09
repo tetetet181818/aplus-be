@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Sales } from '../schemas/sales.schema';
 import response from '../utils/response.pattern';
 import { CreateSalesDto } from './dtos/create-sales.dto';
@@ -91,5 +91,97 @@ export class SalesService {
       data: { buyer, seller, sale },
       statusCode: 200,
     });
+  }
+
+  public async getSalesByUserId(userId: string, page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+
+    const sales = await this.salesModel
+      .find({ sellerId: userId })
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const total = await this.salesModel.countDocuments({ sellerId: userId });
+
+    if (!sales) {
+      throw new NotFoundException('حدث خطأ أثناء جلب المبيعات');
+    }
+
+    if (sales.length === 0) {
+      return {
+        message: 'لا توجد مبيعات متاحة حالياً لهذا المستخدم',
+        data: [],
+        pagination: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        },
+        statusCode: 200,
+      };
+    }
+
+    return {
+      message: 'تم جلب المبيعات بنجاح',
+      data: sales,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+      statusCode: 200,
+    };
+  }
+
+  async getSalesUserStats(sellerId: string) {
+    const stats = await this.salesModel.aggregate([
+      {
+        $match: {
+          sellerId: new Types.ObjectId(sellerId),
+        },
+      },
+      {
+        $sort: { createdAt: 1 },
+      },
+      {
+        $group: {
+          _id: null,
+          firstDate: { $first: '$createdAt' },
+          totalSales: { $sum: 1 },
+          salesList: {
+            $push: {
+              date: '$createdAt',
+              state: '$state',
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          firstDate: 1,
+          totalSales: 1,
+          salesList: 1,
+        },
+      },
+    ]);
+
+    if (!stats.length) {
+      return {
+        message: 'No sales found for this user',
+        data: [],
+        statusCode: 200,
+      };
+    }
+
+    return {
+      message: 'Sales statistics fetched successfully',
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      data: stats[0],
+      statusCode: 200,
+    };
   }
 }
