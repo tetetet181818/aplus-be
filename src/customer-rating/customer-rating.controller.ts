@@ -23,7 +23,6 @@ export class CustomerRatingController {
   @UseGuards(AuthGuard)
   create(
     @CurrentUser() payload: JwtPayload,
-
     @Body() createCustomerRatingDto: CreateCustomerRatingDto,
   ) {
     return this.customerRatingService.create(

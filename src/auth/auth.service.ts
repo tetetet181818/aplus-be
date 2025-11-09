@@ -445,6 +445,7 @@ export class AuthService {
       id: user._id.toString(),
       role: user.role,
       email: userData.email,
+      fullName: user.fullName,
     };
 
     const token = await this.generateJwtToken(payload);
