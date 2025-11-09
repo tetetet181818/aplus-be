@@ -69,6 +69,17 @@ export class AuthService {
       await user.save();
     }
 
+    if (user?.numberOfSales > 20) {
+      user.badgeSales = true;
+      await user.save();
+      await this.notificationService.create({
+        userId: user._id.toString(),
+        title: '🏅 تهانينا! لقد حصلت على شارة البائع المميز',
+        message: 'أنت الآن بائع مميز! شكرًا لمساهمتك القيمة في المنصة.',
+        type: 'success',
+      });
+    }
+
     return response({
       message: 'تم العثور على المستخدم',
       statusCode: 200,
