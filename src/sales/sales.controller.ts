@@ -10,8 +10,8 @@ import {
 import { SalesService } from './sales.service';
 import { CreateSalesDto } from './dtos/create-sales.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
-import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
-import type { JwtPayload } from 'src/utils/types';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { JwtPayload } from '../utils/types';
 
 @Controller('/api/v1/sales')
 export class SalesController {
