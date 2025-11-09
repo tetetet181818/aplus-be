@@ -375,7 +375,6 @@ export class AuthService {
     const users = await this.userModel
       .find()
       .sort({ createdAt: -1 })
-      .limit(5)
       .select('fullName email university numberOfSales')
       .lean();
 
