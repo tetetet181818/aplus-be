@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -6,14 +7,20 @@ import response from '../utils/response.pattern';
 import { CreateSalesDto } from './dtos/create-sales.dto';
 import { NotificationService } from '../notification/notification.service';
 import { User } from '../schemas/users.schema';
+import { Note } from 'src/schemas/note.schema';
 
 @Injectable()
 export class SalesService {
   constructor(
     @InjectModel('Sales')
     private readonly salesModel: Model<Sales>,
+
     @InjectModel(User.name)
     private readonly usersModel: Model<User>,
+
+    @InjectModel(Note.name)
+    private readonly notesModel: Model<Note>,
+
     private readonly notificationService: NotificationService,
   ) {}
 
@@ -182,6 +189,109 @@ export class SalesService {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       data: stats[0],
       statusCode: 200,
+    };
+  }
+
+  async getUserStatisticsSales(userId: string) {
+    const [notes, sales, salesByDate, notesByDate] = await Promise.all([
+      this.notesModel.find({ owner_id: userId }).lean(),
+
+      this.salesModel
+        .find({ sellerId: userId })
+        .select('note_title createdAt amount state')
+        .lean(),
+
+      // Sales count by date
+      this.salesModel.aggregate([
+        { $match: { sellerId: userId } },
+        {
+          $group: {
+            _id: {
+              $dateToString: { format: '%Y-%m-%d', date: '$createdAt' },
+            },
+            count: { $sum: 1 },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            date: '$_id',
+            count: 1,
+          },
+        },
+        { $sort: { date: 1 } },
+      ]),
+
+      // Notes count by date
+      this.notesModel.aggregate([
+        { $match: { owner_id: userId } },
+        {
+          $group: {
+            _id: {
+              $dateToString: { format: '%Y-%m-%d', date: '$createdAt' },
+            },
+            count: { $sum: 1 },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            date: '$_id',
+            count: 1,
+          },
+        },
+        { $sort: { date: 1 } },
+      ]),
+    ]);
+
+    // Totals
+    const totalAmount = sales.reduce((acc, s) => acc + (s.amount || 0), 0);
+    const totalReviews = notes.reduce(
+      (acc, n) => acc + (n.reviews?.length || 0),
+      0,
+    );
+
+    // Ratings
+    const totalRatingSum = notes.reduce((acc, note) => {
+      const noteSum = (note.reviews || []).reduce(
+        (sum, r) => sum + (r.rating || 0),
+        0,
+      );
+      return acc + noteSum;
+    }, 0);
+
+    const globalRating = totalReviews > 0 ? totalRatingSum / totalReviews : 0;
+
+    const salesMap = new Map(
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      salesByDate.map((item) => [item.date, item.count]),
+    );
+
+    const notesMap = new Map(
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      notesByDate.map((item) => [item.date, item.count]),
+    );
+
+    // Merge dates
+    const allDates = new Set([...salesMap.keys(), ...notesMap.keys()]);
+
+    const mergedStats = Array.from(allDates).map((date) => ({
+      date,
+      sale: salesMap.get(date) || 0,
+      note: notesMap.get(date) || 0,
+    }));
+
+    // Sort by date
+    mergedStats.sort((a, b) => (a.date > b.date ? 1 : -1));
+
+    return {
+      noteCount: notes.length,
+      salesCount: sales.length,
+      totalAmount,
+      globalRating,
+      stateSales: salesByDate,
+      stateNotes: mergedStats,
+      sales,
     };
   }
 }

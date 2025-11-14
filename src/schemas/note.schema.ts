@@ -3,9 +3,6 @@ import { Document, Types } from 'mongoose';
 
 export type NoteDocument = Note & Document;
 
-/**
- * Review Subdocument Schema
- */
 @Schema({ _id: true, timestamps: true })
 export class Review {
   @Prop({ type: Types.ObjectId, required: false })

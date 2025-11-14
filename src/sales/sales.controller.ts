@@ -17,6 +17,12 @@ import type { JwtPayload } from '../utils/types';
 export class SalesController {
   constructor(private readonly salesService: SalesService) {}
 
+  @Get('/get-user-statistics-sales')
+  @UseGuards(AuthGuard)
+  public getUserStatisticsSales(@CurrentUser() payload: JwtPayload) {
+    return this.salesService.getUserStatisticsSales(payload.id || '');
+  }
+
   @Post('/create')
   public createSale(@Body() body: CreateSalesDto) {
     return this.salesService.createSale(body);

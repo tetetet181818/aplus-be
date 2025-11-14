@@ -8,6 +8,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { SalesSchema } from '../schemas/sales.schema';
 import { NotificationModule } from '../notification/notification.module';
 import { UserSchema } from '../schemas/users.schema';
+import { NoteSchema } from '../schemas/note.schema';
 
 @Module({
   controllers: [SalesController],
@@ -17,6 +18,7 @@ import { UserSchema } from '../schemas/users.schema';
     MongooseModule.forFeature([
       { name: 'Sales', schema: SalesSchema },
       { name: 'User', schema: UserSchema },
+      { name: 'Note', schema: NoteSchema },
     ]),
     JwtModule.registerAsync({
       inject: [ConfigService],
