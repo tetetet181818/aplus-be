@@ -284,6 +284,29 @@ export class SalesService {
     // Sort by date
     mergedStats.sort((a, b) => (a.date > b.date ? 1 : -1));
 
+    const salesSummaryByNote = await this.salesModel.aggregate([
+      { $match: { sellerId: userId } },
+      {
+        $group: {
+          _id: '$note_id',
+          note_title: { $first: '$note_title' },
+          count: { $sum: 1 },
+          totalProfit: { $sum: '$amount' },
+          date: { $first: '$createdAt' },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          note_id: '$_id',
+          note_title: 1,
+          count: 1,
+          totalProfit: 1,
+          date: 1,
+        },
+      },
+    ]);
+
     return {
       noteCount: notes.length,
       salesCount: sales.length,
@@ -291,7 +314,7 @@ export class SalesService {
       globalRating,
       stateSales: salesByDate,
       stateNotes: mergedStats,
-      sales,
+      sales: salesSummaryByNote,
     };
   }
 }
