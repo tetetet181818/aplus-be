@@ -7,7 +7,7 @@ import response from '../utils/response.pattern';
 import { CreateSalesDto } from './dtos/create-sales.dto';
 import { NotificationService } from '../notification/notification.service';
 import { User } from '../schemas/users.schema';
-import { Note } from 'src/schemas/note.schema';
+import { Note } from '../schemas/note.schema';
 
 @Injectable()
 export class SalesService {
