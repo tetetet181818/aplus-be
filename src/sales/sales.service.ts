@@ -1,5 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Sales } from '../schemas/sales.schema';
@@ -315,6 +319,63 @@ export class SalesService {
       stateSales: salesByDate,
       stateNotes: mergedStats,
       sales: salesSummaryByNote,
+    };
+  }
+
+  async getDetailsSalesNote(
+    userId: string,
+    noteId: string,
+    page: number = 1,
+    limit: number = 10,
+  ) {
+    const note = await this.notesModel.findById(noteId).lean();
+
+    if (note?.owner_id !== userId) {
+      throw new BadRequestException('غير مسموح لك بروية تفاصيل هذا الملخص');
+    }
+
+    const skip = (page - 1) * limit;
+
+    const sales = await this.salesModel
+      .find({ note_id: noteId })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    const totalSalesCount = await this.salesModel.countDocuments({
+      note_id: noteId,
+    });
+
+    const stateSales = await this.salesModel.aggregate([
+      { $match: { note_id: noteId } },
+      {
+        $group: {
+          _id: {
+            $dateToString: { format: '%Y-%m-%d', date: '$createdAt' },
+          },
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          date: '$_id',
+          count: 1,
+        },
+      },
+      { $sort: { date: 1 } },
+    ]);
+
+    return {
+      sales,
+      stateSales,
+      pagination: {
+        page,
+        limit,
+        totalPages: Math.ceil(totalSalesCount / limit),
+        totalSales: totalSalesCount,
+      },
     };
   }
 }

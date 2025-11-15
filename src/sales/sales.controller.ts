@@ -49,6 +49,22 @@ export class SalesController {
     return this.salesService.getAllSales();
   }
 
+  @Get('/get-sales-note/:id')
+  @UseGuards(AuthGuard)
+  getDetailsSalesNote(
+    @CurrentUser() payload: JwtPayload,
+    @Param('id') id: string,
+    @Query('page') page: number,
+    @Query('limit') limit: number,
+  ) {
+    return this.salesService.getDetailsSalesNote(
+      payload.id || '',
+      id,
+      page,
+      limit,
+    );
+  }
+
   @Get('/:id')
   @UseGuards(AuthGuard)
   public getSingleSale(@Param('id') id: string) {
