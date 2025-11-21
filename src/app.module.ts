@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { NotesModule } from './notes/notes.module';
@@ -14,7 +13,6 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { CustomerRatingModule } from './customer-rating/customer-rating.module';
 @Module({
-  controllers: [AppController],
   imports: [
     ThrottlerModule.forRoot({
       throttlers: [

@@ -20,7 +20,6 @@ import type { JwtPayload } from '../utils/types';
 import { AddReviewDto } from './dtos/add-review.dto';
 import { UpdateReviewDto } from './dtos/update-review.dto';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
-import type { Response } from 'express';
 import { UpdateNoteDto } from './dtos/update.note.dto';
 import { Express } from 'express';
 @Controller('/api/v1/notes')
