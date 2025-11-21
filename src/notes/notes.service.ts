@@ -728,6 +728,7 @@ export class NotesService {
       data: bestSellers,
     });
   }
+
   private async uploadImage(
     file: Express.Multer.File,
   ): Promise<UploadApiResponse> {
@@ -740,16 +741,13 @@ export class NotesService {
             result: UploadApiResponse | undefined,
           ) => {
             if (error) {
-              const err = new Error(
-                this.getArabicErrorMessage(error.message) ||
-                  'حدث خطأ أثناء رفع الصورة',
-              );
-              err.name = 'CloudinaryError';
+              const err = new Error(error.message || 'Cloudinary upload error');
+              err.name = (error as { name?: string }).name || 'CloudinaryError';
               reject(err);
               return;
             }
             if (!result) {
-              reject(new Error('فشل رفع الصورة. يرجى المحاولة مرة أخرى.'));
+              reject(new Error('Cloudinary upload failed without a result.'));
               return;
             }
             resolve(result);
@@ -774,16 +772,13 @@ export class NotesService {
             result: UploadApiResponse | undefined,
           ) => {
             if (error) {
-              const err = new Error(
-                this.getArabicErrorMessage(error.message) ||
-                  'حدث خطأ أثناء رفع الملف',
-              );
-              err.name = 'CloudinaryError';
+              const err = new Error(error.message || 'Cloudinary upload error');
+              err.name = (error as { name?: string }).name || 'CloudinaryError';
               reject(err);
               return;
             }
             if (!result) {
-              reject(new Error('فشل رفع الملف. يرجى المحاولة مرة أخرى.'));
+              reject(new Error('Cloudinary upload failed without a result.'));
               return;
             }
             resolve(result);
@@ -791,64 +786,5 @@ export class NotesService {
         )
         .end(file.buffer);
     });
-  }
-
-  private getArabicErrorMessage(englishMessage?: string): string {
-    if (!englishMessage) return 'حدث خطأ غير متوقع';
-
-    const msg = englishMessage.toLowerCase();
-
-    // أخطاء حجم الملف
-    if (msg.includes('file size') || msg.includes('too large')) {
-      return 'حجم الملف كبير جداً. الحد الأقصى المسموح به هو 10 ميجابايت.';
-    }
-
-    // أخطاء نوع الملف
-    if (msg.includes('invalid') && msg.includes('format')) {
-      return 'صيغة الملف غير مدعومة. يرجى استخدام صيغة صالحة.';
-    }
-    if (msg.includes('unsupported')) {
-      return 'نوع الملف غير مدعوم.';
-    }
-
-    // أخطاء الاتصال
-    if (msg.includes('timeout') || msg.includes('timed out')) {
-      return 'انتهت مهلة الاتصال. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.';
-    }
-    if (msg.includes('network') || msg.includes('connection')) {
-      return 'حدث خطأ في الاتصال. يرجى التحقق من اتصالك بالإنترنت.';
-    }
-
-    // أخطاء المصادقة
-    if (msg.includes('unauthorized') || msg.includes('authentication')) {
-      return 'فشل التحقق من الهوية. يرجى التواصل مع الدعم الفني.';
-    }
-    if (msg.includes('api key') || msg.includes('invalid signature')) {
-      return 'خطأ في إعدادات الخادم. يرجى التواصل مع الدعم الفني.';
-    }
-
-    // أخطاء الحصة والحدود
-    if (msg.includes('quota') || msg.includes('limit exceeded')) {
-      return 'تم تجاوز الحد المسموح به. يرجى المحاولة لاحقاً.';
-    }
-    if (msg.includes('rate limit')) {
-      return 'تم تجاوز عدد الطلبات المسموح به. يرجى الانتظار قليلاً ثم المحاولة مرة أخرى.';
-    }
-
-    // أخطاء الملف التالف
-    if (msg.includes('corrupt') || msg.includes('damaged')) {
-      return 'الملف تالف أو معطوب. يرجى اختيار ملف آخر.';
-    }
-
-    // أخطاء الخادم
-    if (msg.includes('server error') || msg.includes('internal error')) {
-      return 'حدث خطأ في الخادم. يرجى المحاولة مرة أخرى لاحقاً.';
-    }
-    if (msg.includes('service unavailable')) {
-      return 'الخدمة غير متاحة حالياً. يرجى المحاولة لاحقاً.';
-    }
-
-    // الخطأ الافتراضي
-    return 'حدث خطأ أثناء رفع الملف. يرجى المحاولة مرة أخرى.';
   }
 }
