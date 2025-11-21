@@ -27,10 +27,10 @@ import {
   PLATFORM_DECREMENT_PERCENT,
   PLATFORM_FREE,
 } from '../utils/constants';
+import { Sales } from '../schemas/sales.schema';
 import { UpdateNoteDto } from './dtos/update.note.dto';
 import { Express } from 'express';
 import type { Response } from 'express';
-import { Sales } from '../schemas/sales.schema';
 @Injectable()
 export class NotesService {
   constructor(
