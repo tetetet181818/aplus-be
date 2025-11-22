@@ -1,7 +1,6 @@
 import {
   BadRequestException,
   Injectable,
-  InternalServerErrorException,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -53,20 +52,44 @@ export class NotesService {
   ) {
     try {
       if (!userId) {
-        throw new BadRequestException(
-          'معرف المستخدم غير موجود، يرجى تسجيل الدخول أولاً',
-        );
+        return {
+          success: false,
+          error: 'USER_NOT_FOUND',
+          message: 'معرف المستخدم غير موجود، يرجى تسجيل الدخول أولاً',
+        };
       }
 
       let uploadImage: UploadApiResponse | null = null;
       let uploadFilePdf: UploadApiResponse | null = null;
 
+      // رفع الصورة
       if (image) {
-        uploadImage = await this.uploadImage(image);
+        try {
+          uploadImage = await this.uploadImage(image);
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (error) {
+          return {
+            success: false,
+            error: 'IMAGE_UPLOAD_FAILED',
+            message:
+              'حدث خطأ أثناء رفع الصورة. يرجى التحقق من نوع الصورة وحجمها والمحاولة مرة أخرى.',
+          };
+        }
       }
 
+      // رفع الملف PDF
       if (file) {
-        uploadFilePdf = await this.uploadFile(file);
+        try {
+          uploadFilePdf = await this.uploadFile(file);
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (error) {
+          return {
+            success: false,
+            error: 'FILE_UPLOAD_FAILED',
+            message:
+              'حدث خطأ أثناء رفع الملف. يرجى التحقق من نوع الملف وحجمه والمحاولة مرة أخرى.',
+          };
+        }
       }
 
       const noteData: Partial<Note> = {
@@ -81,9 +104,11 @@ export class NotesService {
       const newNote = await this.noteModel.create(noteData);
 
       if (!newNote) {
-        throw new InternalServerErrorException(
-          'حدث خلل غير متوقع أثناء إنشاء الملخص، حاول مجددًا بعد قليل',
-        );
+        return {
+          success: false,
+          error: 'CREATE_NOTE_FAILED',
+          message: 'حدث خلل غير متوقع أثناء إنشاء الملخص، حاول مجددًا بعد قليل',
+        };
       }
 
       await this.notificationService.create({
@@ -93,47 +118,40 @@ export class NotesService {
         type: 'notes',
       });
 
-      return response({
+      return {
+        success: true,
         data: newNote,
         message: 'تم إنشاء الملخص بنجاح، يمكنك الآن عرضه أو تعديله حسب رغبتك',
         statusCode: 201,
-      });
-    } catch (err: unknown) {
-      if (
-        err instanceof BadRequestException ||
-        err instanceof InternalServerErrorException
-      ) {
-        throw err;
+      };
+    } catch (err: any) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      if (err?.name === 'ValidationError') {
+        return {
+          success: false,
+          error: 'VALIDATION_ERROR',
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          message: `بعض البيانات غير صحيحة: ${err.message}`,
+        };
       }
 
-      if (
-        typeof err === 'object' &&
-        err !== null &&
-        'name' in err &&
-        (err as { name?: unknown }).name === 'ValidationError' &&
-        'message' in err &&
-        typeof (err as { message?: unknown }).message === 'string'
-      ) {
-        throw new BadRequestException(
-          `بعض البيانات غير صحيحة: ${(err as { message: string }).message}`,
-        );
-      }
-
-      if (
-        typeof err === 'object' &&
-        err !== null &&
-        'code' in err &&
-        (err as { code?: unknown }).code === 11000
-      ) {
-        throw new BadRequestException(
-          'هذا الملف موجود بالفعل، حاول باسم مختلف',
-        );
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      if (err?.code === 11000) {
+        return {
+          success: false,
+          error: 'DUPLICATE_DATA',
+          message: 'هذا الملف موجود بالفعل، حاول باسم مختلف',
+        };
       }
 
       console.error('Unexpected error in createNote:', err);
-      throw new InternalServerErrorException(
-        'عذرًا، حدث خطأ غير متوقع أثناء إنشاء الملخص. الرجاء المحاولة لاحقًا',
-      );
+
+      return {
+        success: false,
+        error: 'UNEXPECTED_ERROR',
+        message:
+          'عذرًا، حدث خطأ غير متوقع أثناء إنشاء الملخص. الرجاء المحاولة لاحقًا',
+      };
     }
   }
 
