@@ -6,7 +6,6 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { MailModule } from '../mail/mail.module';
 import { NoteSchema } from '../schemas/note.schema';
 import { JwtModule } from '@nestjs/jwt';
-import { MulterModule } from '@nestjs/platform-express';
 import { UserSchema } from '../schemas/users.schema';
 import { NotificationModule } from '../notification/notification.module';
 import { SalesModule } from '../sales/sales.module';
@@ -34,9 +33,7 @@ import { SalesSchema } from '../schemas/sales.schema';
         };
       },
     }),
-    MulterModule.register({
-      limits: { fileSize: 10 * 1024 * 1024 },
-    }),
+
     MailModule,
     NotificationModule,
     SalesModule,

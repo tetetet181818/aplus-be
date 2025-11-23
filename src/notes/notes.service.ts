@@ -34,7 +34,7 @@ export class NotesService {
     @InjectModel(User.name)
     private readonly usersModel: Model<User>,
     @InjectModel(Sales.name)
-    private readonly config: ConfigService,
+    private configService: ConfigService,
     private readonly notificationService: NotificationService,
     private readonly salesService: SalesService,
   ) {}
@@ -528,9 +528,9 @@ export class NotesService {
     amount: string;
   }) {
     const domain =
-      this.config.get<string>('NODE_ENV') === 'production'
-        ? this.config.get<string>('FRONTEND_SERVER_PRODUCTION')
-        : this.config.get<string>('FRONTEND_SERVER_DEVELOPMENT');
+      process.env.NODE_ENV === 'production'
+        ? process.env.FRONTEND_SERVER_PRODUCTION
+        : process.env.FRONTEND_SERVER_DEVELOPMENT;
     try {
       const res = await axios.post(
         'https://api.moyasar.com/v1/invoices',
@@ -546,8 +546,7 @@ export class NotesService {
           headers: {
             'Content-Type': 'application/json',
             Authorization:
-              'Basic ' +
-              btoa(`${this.config.get<string>('MOYASAR_API_SECRET_KEY')}`),
+              'Basic ' + btoa(`${process.env.MOYASAR_API_SECRET_KEY}`),
           },
         },
       );
