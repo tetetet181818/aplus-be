@@ -9,5 +9,5 @@
   "editor.formatOnSave": true,
   "notebook.defaultFormatter": "esbenp.prettier-vscode",
   "notebook.formatOnSave.enabled": true,
-  "cSpell.words": ["dtos", "iban", "MOYASAR"]
+  "cSpell.words": ["dtos", "iban", "MOYASAR", "Supabase"]
 }

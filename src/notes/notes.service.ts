@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -12,11 +13,7 @@ import { Note } from '../schemas/note.schema';
 import response from '../utils/response.pattern';
 import { CreateNoteDto } from './dtos/create-note.dto';
 import { UpdateReviewDto } from './dtos/update-review.dto';
-import {
-  v2 as cloudinary,
-  UploadApiResponse,
-  UploadApiErrorResponse,
-} from 'cloudinary';
+
 import { User } from '../schemas/users.schema';
 import { ConfigService } from '@nestjs/config';
 import { NotificationService } from '../notification/notification.service';
@@ -28,7 +25,7 @@ import {
 } from '../utils/constants';
 import { Sales } from '../schemas/sales.schema';
 import { UpdateNoteDto } from './dtos/update.note.dto';
-import { Express } from 'express';
+
 @Injectable()
 export class NotesService {
   constructor(
@@ -37,65 +34,22 @@ export class NotesService {
     @InjectModel(User.name)
     private readonly usersModel: Model<User>,
     @InjectModel(Sales.name)
-    private readonly saleModel: Model<Sales>,
     private readonly config: ConfigService,
     private readonly notificationService: NotificationService,
     private readonly salesService: SalesService,
   ) {}
 
   /** Create new note with comprehensive error handling */
-  public async createNote(
-    body: CreateNoteDto,
-    userId: string,
-    image?: Express.Multer.File,
-    file?: Express.Multer.File,
-  ) {
+  public async createNote(body: CreateNoteDto, userId: string) {
     try {
       if (!userId) {
-        return {
-          success: false,
-          error: 'USER_NOT_FOUND',
-          message: 'معرف المستخدم غير موجود، يرجى تسجيل الدخول أولاً',
-        };
-      }
-
-      let uploadImage: UploadApiResponse | null = null;
-      let uploadFilePdf: UploadApiResponse | null = null;
-
-      // رفع الصورة
-      if (image) {
-        try {
-          uploadImage = await this.uploadImage(image);
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        } catch (error) {
-          return {
-            success: false,
-            error: 'IMAGE_UPLOAD_FAILED',
-            message:
-              'حدث خطأ أثناء رفع الصورة. يرجى التحقق من نوع الصورة وحجمها والمحاولة مرة أخرى.',
-          };
-        }
-      }
-
-      // رفع الملف PDF
-      if (file) {
-        try {
-          uploadFilePdf = await this.uploadFile(file);
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        } catch (error) {
-          return {
-            success: false,
-            error: 'FILE_UPLOAD_FAILED',
-            message:
-              'حدث خطأ أثناء رفع الملف. يرجى التحقق من نوع الملف وحجمه والمحاولة مرة أخرى.',
-          };
-        }
+        throw new BadRequestException(
+          'معرف المستخدم غير موجود، يرجى تسجيل الدخول أولاً',
+        );
       }
 
       const noteData: Partial<Note> = {
         owner_id: userId,
-        ...(uploadFilePdf && { file_path: uploadFilePdf.secure_url }),
-        ...(uploadImage && { cover_url: uploadImage.secure_url }),
         ...body,
         termsAccepted:
           body.termsAccepted === 'true' || body.termsAccepted === '1',
@@ -104,11 +58,9 @@ export class NotesService {
       const newNote = await this.noteModel.create(noteData);
 
       if (!newNote) {
-        return {
-          success: false,
-          error: 'CREATE_NOTE_FAILED',
-          message: 'حدث خلل غير متوقع أثناء إنشاء الملخص، حاول مجددًا بعد قليل',
-        };
+        throw new InternalServerErrorException(
+          'حدث خلل غير متوقع أثناء إنشاء الملخص، حاول مجددًا بعد قليل',
+        );
       }
 
       await this.notificationService.create({
@@ -118,40 +70,47 @@ export class NotesService {
         type: 'notes',
       });
 
-      return {
-        success: true,
+      return response({
         data: newNote,
         message: 'تم إنشاء الملخص بنجاح، يمكنك الآن عرضه أو تعديله حسب رغبتك',
         statusCode: 201,
-      };
-    } catch (err: any) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      if (err?.name === 'ValidationError') {
-        return {
-          success: false,
-          error: 'VALIDATION_ERROR',
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-          message: `بعض البيانات غير صحيحة: ${err.message}`,
-        };
+      });
+    } catch (err: unknown) {
+      if (
+        err instanceof BadRequestException ||
+        err instanceof InternalServerErrorException
+      ) {
+        throw err;
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      if (err?.code === 11000) {
-        return {
-          success: false,
-          error: 'DUPLICATE_DATA',
-          message: 'هذا الملف موجود بالفعل، حاول باسم مختلف',
-        };
+      if (
+        typeof err === 'object' &&
+        err !== null &&
+        'name' in err &&
+        (err as { name?: unknown }).name === 'ValidationError' &&
+        'message' in err &&
+        typeof (err as { message?: unknown }).message === 'string'
+      ) {
+        throw new BadRequestException(
+          `بعض البيانات غير صحيحة: ${(err as { message: string }).message}`,
+        );
+      }
+
+      if (
+        typeof err === 'object' &&
+        err !== null &&
+        'code' in err &&
+        (err as { code?: unknown }).code === 11000
+      ) {
+        throw new BadRequestException(
+          'هذا الملف موجود بالفعل، حاول باسم مختلف',
+        );
       }
 
       console.error('Unexpected error in createNote:', err);
-
-      return {
-        success: false,
-        error: 'UNEXPECTED_ERROR',
-        message:
-          'عذرًا، حدث خطأ غير متوقع أثناء إنشاء الملخص. الرجاء المحاولة لاحقًا',
-      };
+      throw new InternalServerErrorException(
+        'عذرًا، حدث خطأ غير متوقع أثناء إنشاء الملخص. الرجاء المحاولة لاحقًا',
+      );
     }
   }
 
@@ -743,71 +702,6 @@ export class NotesService {
       message: 'تم جلب أفضل الملخصات مبيعاً بنجاح',
       statusCode: 200,
       data: bestSellers,
-    });
-  }
-
-  private async uploadImage(
-    file: Express.Multer.File,
-  ): Promise<UploadApiResponse> {
-    return new Promise<UploadApiResponse>((resolve, reject) => {
-      cloudinary.uploader
-        .upload_stream(
-          { folder: 'images' },
-          (
-            error: UploadApiErrorResponse | undefined,
-            result: UploadApiResponse | undefined,
-          ) => {
-            if (error) {
-              const err = new Error(
-                this.getArabicErrorMessage(error.message) ||
-                  'حدث خطأ أثناء رفع الصورة',
-              );
-              err.name = 'CloudinaryError';
-              reject(err);
-              return;
-            }
-            if (!result) {
-              reject(new Error('فشل رفع الصورة. يرجى المحاولة مرة أخرى.'));
-              return;
-            }
-            resolve(result);
-          },
-        )
-        .end(file.buffer);
-    });
-  }
-
-  private async uploadFile(
-    file: Express.Multer.File,
-  ): Promise<UploadApiResponse> {
-    return new Promise<UploadApiResponse>((resolve, reject) => {
-      const originalName = file.originalname || 'note.pdf';
-      const baseName = originalName.replace(/\.[^/.]+$/, '').trim();
-
-      cloudinary.uploader
-        .upload_stream(
-          { folder: 'pdfs', resource_type: 'raw', public_id: baseName },
-          (
-            error: UploadApiErrorResponse | undefined,
-            result: UploadApiResponse | undefined,
-          ) => {
-            if (error) {
-              const err = new Error(
-                this.getArabicErrorMessage(error.message) ||
-                  'حدث خطأ أثناء رفع الملف',
-              );
-              err.name = 'CloudinaryError';
-              reject(err);
-              return;
-            }
-            if (!result) {
-              reject(new Error('فشل رفع الملف. يرجى المحاولة مرة أخرى.'));
-              return;
-            }
-            resolve(result);
-          },
-        )
-        .end(file.buffer);
     });
   }
 

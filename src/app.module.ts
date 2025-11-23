@@ -7,7 +7,6 @@ import { NotificationModule } from './notification/notification.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { SalesModule } from './sales/sales.module';
 import { WithdrawalsModule } from './withdrawals/withdrawals.module';
-import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
@@ -42,7 +41,6 @@ import { CustomerRatingModule } from './customer-rating/customer-rating.module';
     NotificationModule,
     SalesModule,
     WithdrawalsModule,
-    CloudinaryModule,
     DashboardModule,
     NotificationModule,
     CustomerRatingModule,

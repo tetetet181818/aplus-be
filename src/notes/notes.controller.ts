@@ -8,7 +8,6 @@ import {
   Post,
   Put,
   Query,
-  UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -21,7 +20,6 @@ import { AddReviewDto } from './dtos/add-review.dto';
 import { UpdateReviewDto } from './dtos/update-review.dto';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { UpdateNoteDto } from './dtos/update.note.dto';
-import { Express } from 'express';
 @Controller('/api/v1/notes')
 export class NotesController {
   constructor(private readonly notesService: NotesService) {}
@@ -77,24 +75,12 @@ export class NotesController {
 
   @Post('/create')
   @UseGuards(AuthGuard)
-  @UseInterceptors(
-    FileFieldsInterceptor([
-      { name: 'file', maxCount: 1 },
-      { name: 'cover', maxCount: 1 },
-    ]),
-  )
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'cover', maxCount: 1 }]))
   public createNote(
     @Body() body: CreateNoteDto,
     @CurrentUser() payload: JwtPayload,
-    @UploadedFiles()
-    files: {
-      file?: Express.Multer.File[];
-      cover?: Express.Multer.File[];
-    },
   ) {
-    const pdf = files.file?.[0];
-    const image = files.cover?.[0];
-    return this.notesService.createNote(body, payload.id || '', image, pdf);
+    return this.notesService.createNote(body, payload.id || '');
   }
 
   @Get('/best-sellers-notes')

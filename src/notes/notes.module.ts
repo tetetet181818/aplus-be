@@ -7,7 +7,6 @@ import { MailModule } from '../mail/mail.module';
 import { NoteSchema } from '../schemas/note.schema';
 import { JwtModule } from '@nestjs/jwt';
 import { MulterModule } from '@nestjs/platform-express';
-import { CloudinaryConfig } from '../cloudinary/cloudinary.config';
 import { UserSchema } from '../schemas/users.schema';
 import { NotificationModule } from '../notification/notification.module';
 import { SalesModule } from '../sales/sales.module';
@@ -43,8 +42,4 @@ import { SalesSchema } from '../schemas/sales.schema';
     SalesModule,
   ],
 })
-export class NotesModule {
-  constructor() {
-    CloudinaryConfig();
-  }
-}
+export class NotesModule {}
