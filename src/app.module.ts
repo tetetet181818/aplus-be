@@ -11,6 +11,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { CustomerRatingModule } from './customer-rating/customer-rating.module';
+import { ProfitsModule } from './profits/profits.module';
 @Module({
   imports: [
     ThrottlerModule.forRoot({
@@ -44,6 +45,7 @@ import { CustomerRatingModule } from './customer-rating/customer-rating.module';
     DashboardModule,
     NotificationModule,
     CustomerRatingModule,
+    ProfitsModule,
   ],
 
   providers: [
