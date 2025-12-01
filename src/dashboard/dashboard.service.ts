@@ -472,21 +472,41 @@ export class DashboardService {
     });
   }
 
-  /** get all sales with pagination */
-  async getAllSales(page: number, limit: number) {
-    // Ensure positive integers
+  async getAllSales(
+    page: number,
+    limit: number,
+    status?: string,
+    id?: string,
+    invoiceId?: string,
+  ) {
     const currentPage = Math.max(1, page);
     const pageSize = Math.max(1, limit);
 
-    // Calculate skip
     const skip = (currentPage - 1) * pageSize;
+
+    const filter: { [key: string]: any } = {};
+
+    if (status) {
+      filter.status = status;
+    }
+
+    if (id) {
+      filter._id = id;
+    }
+
+    if (invoiceId) {
+      filter.invoice_id = invoiceId;
+    }
+
     const sales = await this.salesModel
-      .find()
+      .find(filter)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(pageSize)
       .exec();
-    const totalItems = await this.salesModel.countDocuments().exec();
+
+    const totalItems = await this.salesModel.countDocuments(filter).exec();
+
     return {
       message: 'Sales fetched successfully',
       data: {

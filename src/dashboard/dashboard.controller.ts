@@ -121,10 +121,22 @@ export class DashboardController {
 
   @Get('/sales')
   @UseGuards(AuthGuard)
-  getAllSales(@Query('page') page?: string, @Query('limit') limit?: string) {
+  getAllSales(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('status') status?: string,
+    @Query('id') id?: string,
+    @Query('invoiceId') invoiceId?: string,
+  ) {
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 10;
-    return this.dashboardService.getAllSales(pageNum, limitNum);
+    return this.dashboardService.getAllSales(
+      pageNum,
+      limitNum,
+      status,
+      id,
+      invoiceId,
+    );
   }
 
   @Get('/sales/stats')
