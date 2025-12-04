@@ -5,7 +5,7 @@ import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class MailService {
-  private transporter;
+  public transporter;
 
   constructor(private readonly config: ConfigService) {
     const token = this.config.get<string>('SMTP_PASSWORD');

@@ -190,7 +190,7 @@ export class SalesService {
 
     return {
       message: 'Sales statistics fetched successfully',
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
       data: stats[0],
       statusCode: 200,
     };

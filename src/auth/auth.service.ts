@@ -355,6 +355,7 @@ export class AuthService {
    */
   public async updateUser(userId: string, body: UpdateUserDto) {
     const user = await this.userModel.findById(userId);
+
     if (!user) {
       throw new NotFoundException('الحساب غير موجود ❌');
     }
