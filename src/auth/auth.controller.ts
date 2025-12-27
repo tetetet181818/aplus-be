@@ -11,7 +11,10 @@ import {
   Param,
   Req,
   Res,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dtos/register.dto';
 import { LoginDto } from './dtos/login.dto';
@@ -110,6 +113,18 @@ export class AuthController {
   ) {
     if (!payload.id) return;
     return this.authService.updateUser(payload.id, body);
+  }
+
+  @Post('/avatar')
+  @HttpCode(200)
+  @UseGuards(AuthGuard)
+  @UseInterceptors(FileInterceptor('file'))
+  public updateAvatar(
+    @CurrentUser() payload: JwtPayload,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!payload.id) return;
+    return this.authService.updateAvatar(payload.id, file);
   }
 
   @Get('/best-sellers')

@@ -9,6 +9,15 @@ export class User {
   fullName: string;
 
   @Prop({
+    type: String,
+    default: function () {
+      return `https://api.dicebear.com/6.x/initials/svg?seed=${this.fullName}&backgroundColor=2563eb&backgroundType=solid`;
+    },
+    required: false,
+  })
+  avatar: string;
+
+  @Prop({
     required: true,
     unique: true,
     lowercase: true,

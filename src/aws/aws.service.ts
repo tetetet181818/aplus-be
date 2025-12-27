@@ -1,12 +1,23 @@
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Express } from 'express';
 @Injectable()
 export class AwsService {
+  private readonly logger = new Logger(AwsService.name);
   private readonly s3Client: S3Client;
   constructor(private readonly config: ConfigService) {
-    this.s3Client = new S3Client({});
+    this.s3Client = new S3Client({
+      region: config.get<string>('AWS_REGION') || 'eu-north-1',
+      credentials: {
+        accessKeyId: config.get<string>('AWS_ACCESS_KEY_ID') || '',
+        secretAccessKey: config.get<string>('AWS_SECRET_ACCESS_KEY') || '',
+      },
+    });
   }
 
   async uploadAvatar(file: Express.Multer.File) {
@@ -51,18 +62,28 @@ export class AwsService {
       '-',
     )}`;
 
-    await this.s3Client.send(
-      new PutObjectCommand({
-        Bucket: bucket,
-        Key: key,
-        Body: file.buffer,
-        ContentType: file.mimetype,
-        ACL: 'public-read',
-      }),
-    );
+    try {
+      await this.s3Client.send(
+        new PutObjectCommand({
+          Bucket: bucket,
+          Key: key,
+          Body: file.buffer,
+          ContentType: file.mimetype,
+          ACL: 'public-read',
+        }),
+      );
 
-    return `https://${bucket}.s3.${this.config.get<string>(
-      'AWS_REGION',
-    )}.amazonaws.com/${key}`;
+      return `https://${bucket}.s3.${this.config.get<string>(
+        'AWS_REGION',
+      )}.amazonaws.com/${key}`;
+    } catch (error) {
+      this.logger.error(
+        `Failed to upload file to S3: ${error.message}`,
+        error.stack,
+      );
+      throw new InternalServerErrorException(
+        'خطأ في تحميل الملف، يرجى المحاولة لاحقاً ⚠️',
+      );
+    }
   }
 }

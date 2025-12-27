@@ -12,6 +12,7 @@ import { GoogleStrategy } from '../strategies/google.strategy';
 import googleOauthConfig from '../config/google-oauth.config';
 
 import { RefreshTokenStrategy } from '../strategies/refresh-token.strategy';
+import { AwsModule } from '../aws/aws.module';
 
 @Module({
   controllers: [AuthController],
@@ -29,7 +30,7 @@ import { RefreshTokenStrategy } from '../strategies/refresh-token.strategy';
           global: true,
           secret: configService.get<string>('JWT_SECRET'),
           signOptions: {
-            expiresIn: configService.get<string>('JWT_EXPIRES_IN'),
+            expiresIn: configService.get('JWT_EXPIRES_IN') || '1d',
           },
         };
       },
@@ -37,6 +38,7 @@ import { RefreshTokenStrategy } from '../strategies/refresh-token.strategy';
     ConfigModule.forFeature(googleOauthConfig),
     MailModule,
     NotificationModule,
+    AwsModule,
   ],
 })
 export class AuthModule {}

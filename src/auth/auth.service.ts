@@ -25,6 +25,7 @@ import { Note } from '../schemas/note.schema';
 import { NotificationService } from '../notification/notification.service';
 import type { Response } from 'express';
 import { COOKIE_NAME, REFRESH_COOKIE_NAME } from '../utils/constants';
+import { AwsService } from '../aws/aws.service';
 
 /**
  * Temporary payload stored inside the verification token.
@@ -41,6 +42,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly mailService: MailService,
     private readonly notificationService: NotificationService,
+    private readonly awsService: AwsService,
   ) {}
 
   public async getCurrentUser(id: string) {
@@ -396,6 +398,35 @@ export class AuthService {
     });
   }
 
+  public async updateAvatar(userId: string, file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('يجب تحميل صورة 📷');
+    }
+
+    try {
+      const avatarUrl = await this.awsService.uploadAvatar(file);
+
+      const user = await this.userModel.findByIdAndUpdate(
+        userId,
+        { avatar: avatarUrl },
+        { new: true },
+      );
+
+      return response({
+        message: 'تم تحديث الصورة الشخصية بنجاح 🌟',
+        statusCode: 200,
+        data: user,
+      });
+    } catch (error) {
+      if (error instanceof InternalServerErrorException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'حدث خطأ غير متوقع أثناء تحديث الصورة الشخصية ⚠️',
+      );
+    }
+  }
+
   /**
    * Retrieve a user by ID along with all their notes.
    * @param userId - The ID of the user to retrieve.
@@ -629,7 +660,7 @@ export class AuthService {
         },
         {
           secret: this.config.get<string>('JWT_SECRET'),
-          expiresIn: this.config.get<string>('JWT_EXPIRES_IN'),
+          expiresIn: this.config.get('JWT_EXPIRES_IN') || '1d',
         },
       ),
       this.jwtService.signAsync(
@@ -641,7 +672,7 @@ export class AuthService {
         },
         {
           secret: this.config.get<string>('JWT_REFRESH_SECRET'),
-          expiresIn: this.config.get<string>('JWT_REFRESH_EXPIRES_IN'),
+          expiresIn: this.config.get('JWT_REFRESH_EXPIRES_IN') || '7d',
         },
       ),
     ]);
@@ -686,7 +717,7 @@ export class AuthService {
   private generateJwtToken(payload: JwtPayload): Promise<string> {
     return this.jwtService.signAsync(payload, {
       secret: this.config.get<string>('JWT_SECRET'),
-      expiresIn: this.config.get<string>('JWT_EXPIRES_IN'),
+      expiresIn: this.config.get('JWT_EXPIRES_IN') || '1d',
     });
   }
 
