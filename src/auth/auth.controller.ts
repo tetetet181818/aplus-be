@@ -23,8 +23,9 @@ import { CurrentUser } from './decorators/current-user.decorator';
 import type { JwtPayload } from '../utils/types';
 import type { GoogleAuthRequest } from '../utils/types';
 import { GoogleAuthGuard } from '../guards/google-auth.guard';
+import { RefreshTokenGuard } from './guards/refresh-token.guard';
 import { ConfigService } from '@nestjs/config';
-import type { Response } from 'express';
+import type { Response, Request } from 'express';
 
 @Controller('/api/v1/auth')
 export class AuthController {
@@ -61,16 +62,31 @@ export class AuthController {
     return this.authService.verify(token, res);
   }
 
+  @Post('/refresh')
+  @HttpCode(200)
+  @UseGuards(RefreshTokenGuard)
+  public refresh(
+    @CurrentUser() payload: JwtPayload,
+    @Req() req: Request & { user: JwtPayload & { refreshToken: string } },
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const refreshToken = req.user['refreshToken'];
+    return this.authService.refreshTokens(payload.id || '', refreshToken, res);
+  }
+
   @Post('/logout')
   @HttpCode(200)
   @UseGuards(AuthGuard)
-  public logout(@Res({ passthrough: true }) res: Response) {
-    return this.authService.logout(res);
+  public logout(
+    @Res({ passthrough: true }) res: Response,
+    @CurrentUser() payload: JwtPayload,
+  ) {
+    return this.authService.logoutUser(payload.id || '', res);
   }
 
   @Post('/forget-password')
   public forgetPassword(@Body() body: ForgetPasswordDto) {
-    return this.authService.forgetPassword(body.email);
+    return this.authService.forgetPassword(body.email as string);
   }
 
   @Post('/reset-password')

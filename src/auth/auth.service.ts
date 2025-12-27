@@ -5,6 +5,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
   UnauthorizedException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
@@ -23,7 +24,7 @@ import { ResetPasswordDto } from './dtos/reset-password.dto';
 import { Note } from '../schemas/note.schema';
 import { NotificationService } from '../notification/notification.service';
 import type { Response } from 'express';
-import { COOKIE_NAME } from '../utils/constants';
+import { COOKIE_NAME, REFRESH_COOKIE_NAME } from '../utils/constants';
 
 /**
  * Temporary payload stored inside the verification token.
@@ -177,14 +178,19 @@ export class AuthService {
         type: 'success',
       });
 
-      const newToken = await this.generateJwtToken({
-        id: newUser._id.toString(),
-        email: newUser.email,
-        role: newUser.role,
-        fullName: newUser.fullName,
-      });
+      const tokens = await this.getTokens(
+        newUser._id.toString(),
+        newUser.role,
+        newUser.email,
+        newUser.fullName,
+      );
 
-      this.setCookies(res, newToken);
+      await this.updateRefreshToken(
+        newUser._id.toString(),
+        tokens.refreshToken,
+      );
+
+      this.setCookies(res, tokens.accessToken, tokens.refreshToken);
 
       return response({
         message: '🎊 تم تفعيل حسابك بنجاح! يمكنك الآن استخدام المنصه 🚀',
@@ -223,15 +229,14 @@ export class AuthService {
       type: 'success',
     });
 
-    const payload: JwtPayload = {
-      id: user._id.toString(),
-      role: user.role,
-      email: user.email,
-      fullName: user.fullName,
-    };
-
-    const token = await this.generateJwtToken(payload);
-    this.setCookies(res, token);
+    const tokens = await this.getTokens(
+      user._id.toString(),
+      user.role,
+      user.email,
+      user.fullName,
+    );
+    await this.updateRefreshToken(user._id.toString(), tokens.refreshToken);
+    this.setCookies(res, tokens.accessToken, tokens.refreshToken);
 
     return response({
       message: 'مرحباً بعودتك! تم تسجيل الدخول بنجاح ✅',
@@ -239,13 +244,13 @@ export class AuthService {
     });
   }
 
-  public logout(res: Response) {
-    this.removeCookies(res);
-    return response({
-      message: 'تم تسجيل الخروج بنجاح ✅',
-      statusCode: 200,
-    });
-  }
+  // public logout(res: Response) {
+  //   this.removeCookies(res);
+  //   return response({
+  //     message: 'تم تسجيل الخروج بنجاح ✅',
+  //     statusCode: 200,
+  //   });
+  // }
 
   /**
    * Request password reset:
@@ -441,15 +446,15 @@ export class AuthService {
       });
     }
 
-    const payload: JwtPayload = {
-      id: user._id.toString(),
-      role: user.role,
-      email: userData.email,
-      fullName: user.fullName,
-    };
+    const tokens = await this.getTokens(
+      user._id.toString(),
+      user.role,
+      user.email,
+      user.fullName,
+    );
 
-    const token = await this.generateJwtToken(payload);
-    this.setCookies(res, token);
+    await this.updateRefreshToken(user._id.toString(), tokens.refreshToken);
+    this.setCookies(res, tokens.accessToken, tokens.refreshToken);
 
     res.redirect(`${this.config.get<string>('FRONTEND_SERVER_PRODUCTION')}/`);
     return response({
@@ -544,6 +549,140 @@ export class AuthService {
   /**
    * Generate JWT token for authenticated user.
    */
+  public async refreshTokens(
+    userId: string,
+    refreshToken: string,
+    res: Response,
+  ) {
+    const user = await this.userModel.findById(userId);
+    if (!user || !user.hashedRefreshToken)
+      throw new ForbiddenException('Access Denied');
+
+    const refreshTokenMatches = await bcrypt.compare(
+      refreshToken,
+      user.hashedRefreshToken,
+    );
+    if (!refreshTokenMatches) throw new ForbiddenException('Access Denied');
+
+    const tokens = await this.getTokens(
+      user._id.toString(),
+      user.role,
+      user.email,
+      user.fullName,
+    );
+    await this.updateRefreshToken(user._id.toString(), tokens.refreshToken);
+    this.setCookies(res, tokens.accessToken, tokens.refreshToken);
+
+    return response({
+      message: 'تم تحديث الجلسة بنجاح ✅',
+      statusCode: 200,
+    });
+  }
+
+  public async logout(res: Response) {
+    // Find the user associated with the request (if you have the user ID available in the context)
+    // and nullify the refresh token. Since we don't pass userID to logout here often,
+    // we might just clear cookies. Ideally, we should also clear the DB hash.
+    // But for now, following the existing pattern of just clearing cookies in the response
+    // We should update the controller to pass the user ID if we want to clear from DB too.
+    // I will update this method to accept userId in the next step.
+    this.removeCookies(res);
+    return response({
+      message: 'تم تسجيل الخروج بنجاح ✅',
+      statusCode: 200,
+    });
+  }
+
+  public async logoutUser(userId: string, res: Response) {
+    if (userId) {
+      await this.userModel.findByIdAndUpdate(userId, {
+        hashedRefreshToken: null,
+      });
+    }
+    this.removeCookies(res);
+    return response({
+      message: 'تم تسجيل الخروج بنجاح ✅',
+      statusCode: 200,
+    });
+  }
+
+  async updateRefreshToken(userId: string, refreshToken: string) {
+    const hash = await this.hashPassword(refreshToken);
+    await this.userModel.findByIdAndUpdate(userId, {
+      hashedRefreshToken: hash,
+    });
+  }
+
+  async getTokens(
+    userId: string,
+    role: string,
+    email: string,
+    fullName: string,
+  ) {
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync(
+        {
+          id: userId,
+          role,
+          email,
+          fullName,
+        },
+        {
+          secret: this.config.get<string>('JWT_SECRET'),
+          expiresIn: this.config.get<string>('JWT_EXPIRES_IN'),
+        },
+      ),
+      this.jwtService.signAsync(
+        {
+          id: userId,
+          role,
+          email,
+          fullName,
+        },
+        {
+          secret: this.config.get<string>('JWT_REFRESH_SECRET'),
+          expiresIn: this.config.get<string>('JWT_REFRESH_EXPIRES_IN'),
+        },
+      ),
+    ]);
+
+    return {
+      accessToken,
+      refreshToken,
+    };
+  }
+
+  private setCookies(res: Response, accessToken: string, refreshToken: string) {
+    res.cookie(COOKIE_NAME, accessToken, {
+      httpOnly: true,
+      sameSite: 'none',
+      secure: true,
+      maxAge: 1000 * 60 * 60 * 7, // 7 hours
+    });
+
+    res.cookie(REFRESH_COOKIE_NAME, refreshToken, {
+      httpOnly: true,
+      sameSite: 'none',
+      secure: true,
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+    });
+  }
+
+  private removeCookies(res: Response) {
+    res.clearCookie(COOKIE_NAME, {
+      httpOnly: true,
+      sameSite: 'none',
+      secure: true,
+      maxAge: 1000 * 60 * 60 * 7,
+    });
+
+    res.clearCookie(REFRESH_COOKIE_NAME, {
+      httpOnly: true,
+      sameSite: 'none',
+      secure: true,
+      maxAge: 1000 * 60 * 60 * 24 * 7,
+    });
+  }
   private generateJwtToken(payload: JwtPayload): Promise<string> {
     return this.jwtService.signAsync(payload, {
       secret: this.config.get<string>('JWT_SECRET'),
@@ -559,23 +698,5 @@ export class AuthService {
 
   private async hashPassword(password: string): Promise<string> {
     return await bcrypt.hash(password, 10);
-  }
-
-  private setCookies(res: Response, token: string) {
-    return res.cookie(COOKIE_NAME, token, {
-      httpOnly: true,
-      sameSite: 'none',
-      secure: true,
-      maxAge: 1000 * 60 * 60 * 7,
-    });
-  }
-
-  private removeCookies(res: Response) {
-    return res.clearCookie(COOKIE_NAME, {
-      httpOnly: true,
-      sameSite: 'none',
-      secure: true,
-      maxAge: 1000 * 60 * 60 * 7,
-    });
   }
 }

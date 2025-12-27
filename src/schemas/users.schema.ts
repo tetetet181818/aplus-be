@@ -40,6 +40,9 @@ export class User {
   @Prop({ type: String, required: false, default: null })
   resetPasswordToken: string | null;
 
+  @Prop({ type: String, required: false, default: null })
+  hashedRefreshToken: string | null;
+
   @Prop({ type: Boolean, default: false })
   badgeSales: boolean;
 

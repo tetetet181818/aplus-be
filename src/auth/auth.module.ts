@@ -11,9 +11,11 @@ import { NotificationModule } from '../notification/notification.module';
 import { GoogleStrategy } from '../strategies/google.strategy';
 import googleOauthConfig from '../config/google-oauth.config';
 
+import { RefreshTokenStrategy } from '../strategies/refresh-token.strategy';
+
 @Module({
   controllers: [AuthController],
-  providers: [AuthService, GoogleStrategy],
+  providers: [AuthService, GoogleStrategy, RefreshTokenStrategy],
   imports: [
     ConfigModule,
     MongooseModule.forFeature([

@@ -4,3 +4,4 @@ export const PLATFORM_FREE = '15%';
 export const PLATFORM_DECREMENT_PERCENT = 0.15;
 export const PLATFORM_DECREMENT_PAYMENT_PERCENT = 0.0275;
 export const COOKIE_NAME: string = 'token';
+export const REFRESH_COOKIE_NAME: string = 'refresh_token';
