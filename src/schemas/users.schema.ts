@@ -6,16 +6,16 @@ export type UserDocument = User & Document;
 @Schema({ timestamps: true })
 export class User {
   @Prop({ type: String, required: true, unique: true })
-  fullName: string;
+  fullName!: string;
 
   @Prop({
     type: String,
-    default: function () {
+    default: function (this: User) {
       return `https://api.dicebear.com/6.x/initials/svg?seed=${this.fullName}&backgroundColor=2563eb&backgroundType=solid`;
     },
     required: false,
   })
-  avatar: string;
+  avatar!: string;
 
   @Prop({
     required: true,
@@ -23,46 +23,46 @@ export class User {
     lowercase: true,
     trim: true,
   })
-  email: string;
+  email!: string;
 
   @Prop({ type: String, required: false, minlength: 6 })
   password?: string;
 
   @Prop({ type: String, required: false })
-  university: string;
+  university!: string;
 
   @Prop({ type: String, default: 'student', enum: ['student', 'admin'] })
-  role: string;
+  role!: string;
 
   @Prop({ type: Number, required: false, default: 0 })
-  balance: number;
+  balance!: number;
 
   @Prop({ type: Array, required: false, default: [] })
-  likesList: object[];
+  likesList!: object[];
 
   @Prop({ type: Number, default: 2 })
-  withdrawalTimes: number;
+  withdrawalTimes!: number;
 
   @Prop({ type: Number, default: 0 })
-  numberOfSales: number;
+  numberOfSales!: number;
 
   @Prop({ type: String, required: false, default: null })
-  resetPasswordToken: string | null;
+  resetPasswordToken!: string | null;
 
   @Prop({ type: String, required: false, default: null })
-  hashedRefreshToken: string | null;
+  hashedRefreshToken!: string | null;
 
   @Prop({ type: Boolean, default: false })
-  badgeSales: boolean;
+  badgeSales!: boolean;
 
   @Prop({ type: Date, default: () => new Date() })
-  lastWithdrawalReset: Date;
+  lastWithdrawalReset!: Date;
 
   @Prop({ type: Number })
-  resetPasswordExpires: number;
+  resetPasswordExpires!: number;
 
   @Prop({ default: 'local' })
-  provider: 'local' | 'google';
+  provider!: 'local' | 'google';
 
   @Prop({
     type: [
@@ -84,7 +84,7 @@ export class User {
     ],
     default: [],
   })
-  purchased_notes: Array<{
+  purchased_notes!: Array<{
     note_id: string;
     title: string;
     price: number;

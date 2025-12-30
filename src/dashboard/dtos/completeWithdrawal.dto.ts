@@ -3,8 +3,8 @@ import { IsOptional, IsString } from 'class-validator';
 export class CompleteWithdrawalDto {
   @IsOptional()
   @IsString()
-  routingNumber: string;
+  routingNumber!: string;
 
   @IsOptional()
-  routingDate: Date;
+  routingDate!: Date;
 }

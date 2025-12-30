@@ -6,76 +6,76 @@ export type NoteDocument = Note & Document;
 @Schema({ _id: true, timestamps: true })
 export class Review {
   @Prop({ type: Types.ObjectId, required: false })
-  _id: string;
+  _id!: string;
 
   @Prop({ type: Number, required: true, min: 1, max: 5 })
-  rating: number;
+  rating!: number;
 
   @Prop({ type: String, required: true })
-  comment: string;
+  comment!: string;
 
   @Prop({ type: String, required: true })
-  userId: string;
+  userId!: string;
 
   @Prop({ type: String, required: true })
-  userName: string;
+  userName!: string;
 }
 
 @Schema({ timestamps: true })
 export class Note {
   @Prop({ type: String, required: true })
-  file_path: string;
+  file_path!: string;
 
   @Prop({ type: [String], required: false, default: [] })
   purchased_by?: string[];
 
   @Prop({ type: [Review], default: [] })
-  reviews: Review[];
+  reviews!: Review[];
 
   @Prop({ type: String, required: false })
-  contactMethod: string;
+  contactMethod!: string;
 
   @Prop({ type: String, required: false })
-  cover_url: string;
+  cover_url!: string;
 
   @Prop({ type: String, required: true })
-  title: string;
+  title!: string;
 
   @Prop({ type: String, required: true })
-  description: string;
+  description!: string;
 
   @Prop({ type: Number, required: true, default: 0 })
-  price: number;
+  price!: number;
 
   @Prop({ type: String, required: true })
-  subject: string;
+  subject!: string;
 
   @Prop({ type: String, required: true })
-  owner_id: string;
+  owner_id!: string;
 
   @Prop({ type: Number, required: false })
-  pagesNumber: number;
+  pagesNumber!: number;
 
   @Prop({ type: Number, required: true })
-  year: number;
+  year!: number;
 
   @Prop({ type: String, required: true })
-  college: string;
+  college!: string;
 
   @Prop({ type: String, required: true })
-  university: string;
+  university!: string;
 
   @Prop({ type: String })
   file_url?: string;
 
   @Prop({ type: Number, default: 0 })
-  downloads: number;
+  downloads!: number;
 
   @Prop({ type: Boolean, default: true })
-  isPublish: boolean;
+  isPublish!: boolean;
 
   @Prop({ type: Boolean, default: true })
-  termsAccepted: boolean;
+  termsAccepted!: boolean;
 }
 
 export const NoteSchema = SchemaFactory.createForClass(Note);

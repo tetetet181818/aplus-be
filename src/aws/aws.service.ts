@@ -12,7 +12,7 @@ export class AwsService {
   private readonly s3Client: S3Client;
   constructor(private readonly config: ConfigService) {
     this.s3Client = new S3Client({
-      region: config.get<string>('AWS_REGION') || 'eu-north-1',
+      region: config.get<string>('AWS_REGION') || "",
       credentials: {
         accessKeyId: config.get<string>('AWS_ACCESS_KEY_ID') || '',
         secretAccessKey: config.get<string>('AWS_SECRET_ACCESS_KEY') || '',
@@ -77,9 +77,12 @@ export class AwsService {
         'AWS_REGION',
       )}.amazonaws.com/${key}`;
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      const errorStack = error instanceof Error ? error.stack : undefined;
       this.logger.error(
-        `Failed to upload file to S3: ${error.message}`,
-        error.stack,
+        `Failed to upload file to S3: ${errorMessage}`,
+        errorStack,
       );
       throw new InternalServerErrorException(
         'خطأ في تحميل الملف، يرجى المحاولة لاحقاً ⚠️',

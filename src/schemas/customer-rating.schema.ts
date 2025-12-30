@@ -10,19 +10,19 @@ export class CustomerRating {
     ref: 'User',
     required: true,
   })
-  customerId: string;
+  customerId!: string;
 
   @Prop({ type: Number, required: true })
-  rating: number;
+  rating!: number;
 
   @Prop({ type: String, required: true })
-  fullName: string;
+  fullName!: string;
 
   @Prop({ type: String, required: true })
-  comment: string;
+  comment!: string;
 
   @Prop({ type: Boolean, default: true })
-  isPublish: boolean;
+  isPublish!: boolean;
 }
 
 export const CustomerRatingSchema =

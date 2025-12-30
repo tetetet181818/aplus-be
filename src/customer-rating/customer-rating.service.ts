@@ -66,13 +66,21 @@ export class CustomerRatingService {
       if (error instanceof BadRequestException) throw error;
       if (error instanceof ConflictException) throw error;
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      if (error.name === 'ValidationError') {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'name' in error &&
+        error.name === 'ValidationError'
+      ) {
         throw new BadRequestException('البيانات المرسلة غير صالحة.');
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      if (error.code === 11000) {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'code' in error &&
+        error.code === 11000
+      ) {
         throw new ConflictException('تم العثور على تقييم مكرر لنفس العميل.');
       }
 

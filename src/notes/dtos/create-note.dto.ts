@@ -7,14 +7,14 @@ export class CreateNoteDto {
 
   @IsString()
   @IsNotEmpty({ message: '📌 العنوان مطلوب' })
-  title: string;
+  title!: string;
 
   @IsOptional()
   @IsString()
   description?: string;
 
   @IsNotEmpty({ message: '💰 السعر مطلوب' })
-  price: number;
+  price!: number;
 
   @IsOptional()
   @IsString()
@@ -41,5 +41,5 @@ export class CreateNoteDto {
   cover_url?: string;
 
   @IsNotEmpty()
-  termsAccepted: string;
+  termsAccepted!: string;
 }

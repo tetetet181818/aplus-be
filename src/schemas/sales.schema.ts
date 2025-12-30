@@ -4,37 +4,37 @@ import { Document } from 'mongoose';
 @Schema({ timestamps: true })
 export class Sales extends Document {
   @Prop({ type: String, required: true })
-  sellerId: string;
+  sellerId!: string;
 
   @Prop({ type: String, required: false })
-  buyerId: string;
+  buyerId!: string;
 
   @Prop({ type: String, required: true })
-  note_id: string;
+  note_id!: string;
 
   @Prop({ type: Number, required: true })
-  amount: number;
+  amount!: number;
 
   @Prop({ type: Number, required: true })
-  commission: number;
+  commission!: number;
 
   @Prop({ type: String, required: true })
-  status: string;
+  status!: string;
 
   @Prop({ type: String, required: true })
-  payment_method: string;
+  payment_method!: string;
 
   @Prop({ type: String, required: true })
-  note_title: string;
+  note_title!: string;
 
   @Prop({ type: String, required: true })
-  invoice_id: string;
+  invoice_id!: string;
 
   @Prop({ type: String, required: true })
-  message: string;
+  message!: string;
 
   @Prop({ type: String, required: true })
-  platform_fee: string;
+  platform_fee!: string;
 }
 
 export const SalesSchema = SchemaFactory.createForClass(Sales);

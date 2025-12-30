@@ -286,8 +286,8 @@ export class NotesService {
       throw new NotFoundException('المستخدم غير موجود');
     }
 
-    const noteIds = user.likesList.map(
-      (item: { noteId: string }) => item.noteId,
+    const noteIds = (user.likesList as Array<{ noteId: string }>).map(
+      (item) => item.noteId,
     );
 
     const notes = await this.noteModel.find({ _id: { $in: noteIds } });
@@ -557,8 +557,18 @@ export class NotesService {
         statusCode: 200,
       });
     } catch (error) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      console.error('Moyasar error:', error.res?.data || error.message);
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      const errorData =
+        error &&
+        typeof error === 'object' &&
+        'res' in error &&
+        error.res &&
+        typeof error.res === 'object' &&
+        'data' in error.res
+          ? error.res.data
+          : undefined;
+      console.error('Moyasar error:', errorData || errorMessage);
       throw error;
     }
   }
@@ -572,8 +582,8 @@ export class NotesService {
       throw new NotFoundException('User not found');
     }
 
-    const alreadyLiked = user.likesList.some(
-      (like: { noteId: string }) => like.noteId === noteId,
+    const alreadyLiked = (user.likesList as Array<{ noteId: string }>).some(
+      (like) => like.noteId === noteId,
     );
     if (alreadyLiked) {
       return response({
@@ -598,8 +608,8 @@ export class NotesService {
       throw new NotFoundException('User not found');
     }
 
-    const alreadyLiked = user.likesList.some(
-      (like: { noteId: string }) => like.noteId === noteId,
+    const alreadyLiked = (user.likesList as Array<{ noteId: string }>).some(
+      (like) => like.noteId === noteId,
     );
 
     if (!alreadyLiked) {
@@ -627,8 +637,8 @@ export class NotesService {
       throw new NotFoundException('User not found');
     }
 
-    const alreadyLiked = user.likesList.some(
-      (like: { noteId: string }) => like.noteId === noteId,
+    const alreadyLiked = (user.likesList as Array<{ noteId: string }>).some(
+      (like) => like.noteId === noteId,
     );
 
     return response({

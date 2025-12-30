@@ -3,45 +3,45 @@ import { IsString, IsNumber, IsNotEmpty } from 'class-validator';
 export class CreateSalesDto {
   @IsString()
   @IsNotEmpty()
-  sellerId: string;
+  sellerId!: string;
 
   @IsString()
   @IsNotEmpty()
-  buyerId: string;
+  buyerId!: string;
 
   @IsString()
   @IsNotEmpty()
-  note_id: string;
+  note_id!: string;
 
   @IsString()
   @IsNotEmpty()
-  status: string;
+  status!: string;
 
   @IsNumber()
   @IsNotEmpty()
-  amount: number;
+  amount!: number;
 
   @IsNumber()
   @IsNotEmpty()
-  commission: number;
+  commission!: number;
 
   @IsString()
   @IsNotEmpty()
-  payment_method: string;
+  payment_method!: string;
 
   @IsString()
   @IsNotEmpty()
-  note_title: string;
+  note_title!: string;
 
   @IsString()
   @IsNotEmpty()
-  invoice_id: string;
+  invoice_id!: string;
 
   @IsString()
   @IsNotEmpty()
-  message: string;
+  message!: string;
 
   @IsString()
   @IsNotEmpty()
-  platform_fee: string;
+  platform_fee!: string;
 }

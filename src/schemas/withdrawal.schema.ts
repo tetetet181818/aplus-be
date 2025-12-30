@@ -4,10 +4,10 @@ import { Document } from 'mongoose';
 @Schema({ timestamps: true })
 export class Withdrawal extends Document {
   @Prop({ type: String, required: true })
-  userId: string;
+  userId!: string;
 
   @Prop({ type: Number, required: true })
-  amount: number;
+  amount!: number;
 
   @Prop({
     type: String,
@@ -15,25 +15,25 @@ export class Withdrawal extends Document {
     default: 'pending',
     enum: ['pending', 'accepted', 'rejected', 'completed'],
   })
-  status: string;
+  status!: string;
 
   @Prop({ type: String, required: false })
-  adminNotes: string;
+  adminNotes!: string;
 
   @Prop({ type: String, required: true })
-  accountName: string;
+  accountName!: string;
 
   @Prop({ type: String, required: true })
-  bankName: string;
+  bankName!: string;
 
   @Prop({ type: String, required: true })
-  iban: string;
+  iban!: string;
 
   @Prop({ type: String, required: false })
-  routingNumber: string;
+  routingNumber!: string;
 
   @Prop({ type: Date, required: false })
-  routingDate: Date;
+  routingDate!: Date;
 }
 
 export const WithdrawalSchema = SchemaFactory.createForClass(Withdrawal);

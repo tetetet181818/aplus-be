@@ -4,19 +4,19 @@ import { Document } from 'mongoose';
 @Schema({ timestamps: true })
 export class Notification extends Document {
   @Prop({ type: String, required: true })
-  userId: string;
+  userId!: string;
 
   @Prop({ type: String, required: true })
-  title: string;
+  title!: string;
 
   @Prop({ type: String, required: true })
-  message: string;
+  message!: string;
 
   @Prop({ type: Boolean, default: false })
-  read: boolean;
+  read!: boolean;
 
   @Prop({ default: 'info' })
-  type:
+  type!:
     | 'info'
     | 'purchase'
     | 'success'

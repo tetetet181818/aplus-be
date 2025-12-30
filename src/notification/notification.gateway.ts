@@ -9,7 +9,7 @@ import { NotificationService } from './notification.service';
 })
 export class NotificationGateway {
   @WebSocketServer()
-  server: Server;
+  server!: Server;
 
   constructor(private readonly notif: NotificationService) {}
 

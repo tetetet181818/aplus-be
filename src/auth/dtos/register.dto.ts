@@ -9,10 +9,10 @@ import {
 export class RegisterDto {
   @IsString({ message: 'الاسم يجب أن يكون نصاً' })
   @IsNotEmpty({ message: 'من فضلك أدخل الاسم الكامل' })
-  fullName: string;
+  fullName!: string;
 
   @IsEmail({}, { message: 'البريد الإلكتروني غير صحيح، برجاء إدخال بريد صالح' })
-  email: string;
+  email!: string;
 
   @IsString({ message: 'كلمة المرور يجب أن تكون نصاً' })
   @MinLength(6, { message: 'كلمة المرور يجب ألا تقل عن 6 أحرف' })
