@@ -29,7 +29,7 @@ import { GoogleAuthGuard } from '../guards/google-auth.guard';
 import { RefreshTokenGuard } from './guards/refresh-token.guard';
 import { ConfigService } from '@nestjs/config';
 import type { Response, Request } from 'express';
-
+import type { Express } from "express"
 @Controller('/api/v1/auth')
 export class AuthController {
   constructor(

@@ -26,7 +26,7 @@ import { NotificationService } from '../notification/notification.service';
 import type { Response } from 'express';
 import { COOKIE_NAME, REFRESH_COOKIE_NAME } from '../utils/constants';
 import { AwsService } from '../aws/aws.service';
-
+import {Express} from "express"
 /**
  * Temporary payload stored inside the verification token.
  */
