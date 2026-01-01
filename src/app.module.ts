@@ -13,6 +13,8 @@ import { APP_GUARD } from '@nestjs/core';
 import { CustomerRatingModule } from './customer-rating/customer-rating.module';
 import { ProfitsModule } from './profits/profits.module';
 import { AwsModule } from './aws/aws.module';
+import { CoursesModule } from './courses/courses.module';
+import { AnnouncementsModule } from './announcements/announcements.module';
 @Module({
   imports: [
     ThrottlerModule.forRoot({
@@ -48,6 +50,8 @@ import { AwsModule } from './aws/aws.module';
     CustomerRatingModule,
     ProfitsModule,
     AwsModule,
+    CoursesModule,
+    AnnouncementsModule,
   ],
 
   providers: [

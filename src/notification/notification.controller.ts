@@ -21,49 +21,85 @@ export class NotificationController {
     private readonly gateway: NotificationGateway,
   ) {}
 
-  /**  Get all notifications */
+  /** Get all notifications */
   @Get('/')
   @UseGuards(AuthGuard)
   async getAll(@CurrentUser() payload: JwtPayload) {
     return this.notificationService.getAll(payload.id || '');
   }
 
-  /**  Mark single as read */
+  /** Get unread count */
+  @Get('/unread-count')
+  @UseGuards(AuthGuard)
+  async getUnreadCount(@CurrentUser() payload: JwtPayload) {
+    return this.notificationService.getUnreadCount(payload.id || '');
+  }
+
+  /** Mark single as read */
   @Patch(':id/read')
   @UseGuards(AuthGuard)
   async markAsRead(
     @CurrentUser() payload: JwtPayload,
     @Param('id') id: string,
   ) {
-    return this.notificationService.markAsRead(payload.id || '', id);
+    const userId = payload.id || '';
+    const result = await this.notificationService.markAsRead(userId, id);
+    
+    // Emit real-time event
+    this.gateway.emitNotificationRead(
+      userId,
+      result.notification,
+      result.unreadCount,
+    );
+    
+    return result.response;
   }
 
-  /**  Mark all as read */
+  /** Mark all as read */
   @Patch('/read-all')
   @UseGuards(AuthGuard)
   async markAllAsRead(@CurrentUser() payload: JwtPayload) {
-    return this.notificationService.markAllAsRead(payload.id || '');
+    const userId = payload.id || '';
+    const result = await this.notificationService.markAllAsRead(userId);
+    
+    // Emit real-time event
+    this.gateway.emitAllNotificationsRead(
+      userId,
+      result.updatedCount,
+      result.unreadCount,
+    );
+    
+    return result.response;
   }
 
-  /**  Clear all notifications */
+  /** Clear all notifications */
   @Delete('/clear-all')
   @UseGuards(AuthGuard)
   async clearAll(@CurrentUser() payload: JwtPayload) {
-    this.gateway.server.emit('clear');
-    return this.notificationService.clearAll(payload.id || '');
+    const userId = payload.id || '';
+    const result = await this.notificationService.clearAll(userId);
+    
+    // Emit real-time event
+    this.gateway.emitNotificationsCleared(userId);
+    
+    return result;
   }
 
   @Post()
+  @UseGuards(AuthGuard)
   async create(
     @CurrentUser() payload: JwtPayload,
     @Body() body: { title: string; message: string; type?: string },
   ) {
-    this.gateway.emitNewNotification(body);
-    return this.notificationService.create({
-      userId: payload.id || '',
+    const userId = payload.id || '';
+    const result = await this.notificationService.create({
+      userId,
       title: body.title,
       message: body.message,
       type: body.type as 'info' | 'success' | 'warning' | 'error',
     });
+    
+    // Real-time emission is handled by the service
+    return result.response;
   }
 }

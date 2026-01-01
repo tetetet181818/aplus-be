@@ -406,7 +406,7 @@ export class NotesService {
     });
   }
 
-  /**  purchase note */
+  /** Purchase note */
   public async purchaseNote(
     noteId: string,
     userId: string,

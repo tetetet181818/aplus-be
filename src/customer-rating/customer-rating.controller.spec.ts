@@ -54,35 +54,19 @@ describe('CustomerRatingController', () => {
     expect(controller).toBeDefined();
   });
 
-  describe('create', () => {
-    // TODO: Add test cases
-  });
+  describe('create', () => {});
 
-  describe('findAll', () => {
-    // TODO: Add test cases
-  });
+  describe('findAll', () => {});
 
-  describe('publishRating', () => {
-    // TODO: Add test cases
-  });
+  describe('publishRating', () => {});
 
-  describe('unPublishRating', () => {
-    // TODO: Add test cases
-  });
+  describe('unPublishRating', () => {});
 
-  describe('update', () => {
-    // TODO: Add test cases
-  });
+  describe('update', () => {});
 
-  describe('remove', () => {
-    // TODO: Add test cases
-  });
+  describe('remove', () => {});
 
-  describe('userRatedBefore', () => {
-    // TODO: Add test cases
-  });
+  describe('userRatedBefore', () => {});
 
-  describe('getCustomerRatingForDashboard', () => {
-    // TODO: Add test cases
-  });
+  describe('getCustomerRatingForDashboard', () => {});
 });

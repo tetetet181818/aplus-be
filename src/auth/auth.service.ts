@@ -56,13 +56,11 @@ export class AuthService {
       throw new NotFoundException('المستخدم غير موجود 🚫');
     }
 
-    //  Reset logic for monthly withdrawals
     const now = new Date();
     const lastReset = user.lastWithdrawalReset
       ? new Date(user.lastWithdrawalReset)
       : new Date(0);
 
-    // if a new month has started, reset withdrawalTimes to 2
     if (
       now.getMonth() !== lastReset.getMonth() ||
       now.getFullYear() !== lastReset.getFullYear()
@@ -245,14 +243,6 @@ export class AuthService {
       statusCode: 200,
     });
   }
-
-  // public logout(res: Response) {
-  //   this.removeCookies(res);
-  //   return response({
-  //     message: 'تم تسجيل الخروج بنجاح ✅',
-  //     statusCode: 200,
-  //   });
-  // }
 
   /**
    * Request password reset:
@@ -446,7 +436,6 @@ export class AuthService {
       throw new NotFoundException('المستخدم غير موجود 🚫');
     }
 
-    // Fetch notes owned by the user
     const notes = await this.notesModel.find({ owner_id: userId }).lean();
 
     return response({
@@ -553,7 +542,6 @@ export class AuthService {
     // clean and normalize name
     let baseName = fullName?.replace(/\s+/g, '').toLowerCase();
 
-    // if name somehow empty, use part of email
     if (!baseName || baseName.length < 3) {
       baseName = email.split('@')[0];
     }
@@ -611,12 +599,6 @@ export class AuthService {
   }
 
   public async logout(res: Response) {
-    // Find the user associated with the request (if you have the user ID available in the context)
-    // and nullify the refresh token. Since we don't pass userID to logout here often,
-    // we might just clear cookies. Ideally, we should also clear the DB hash.
-    // But for now, following the existing pattern of just clearing cookies in the response
-    // We should update the controller to pass the user ID if we want to clear from DB too.
-    // I will update this method to accept userId in the next step.
     this.removeCookies(res);
     return response({
       message: 'تم تسجيل الخروج بنجاح ✅',

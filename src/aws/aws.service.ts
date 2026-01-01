@@ -12,7 +12,7 @@ export class AwsService {
   private readonly s3Client: S3Client;
   constructor(private readonly config: ConfigService) {
     this.s3Client = new S3Client({
-      region: config.get<string>('AWS_REGION') || "",
+      region: config.get<string>('AWS_REGION') || '',
       credentials: {
         accessKeyId: config.get<string>('AWS_ACCESS_KEY_ID') || '',
         secretAccessKey: config.get<string>('AWS_SECRET_ACCESS_KEY') || '',
@@ -24,15 +24,13 @@ export class AwsService {
     return this.uploadFile(
       file,
       this.config.get<string>('AWS_BUCKET_AVATARS') || '',
-      'avatars',
     );
   }
 
-  async uploadNotesThumbnail(file: Express.Multer.File) {
+  async uploadThumbnail(file: Express.Multer.File) {
     return this.uploadFile(
       file,
       this.config.get<string>('AWS_BUCKET_THUMBNAILS') || '',
-      'thumbnails',
     );
   }
 
@@ -40,7 +38,6 @@ export class AwsService {
     return this.uploadFile(
       file,
       this.config.get<string>('AWS_BUCKET_COURSES') || '',
-      'course-videos',
     );
   }
 
@@ -48,19 +45,11 @@ export class AwsService {
     return this.uploadFile(
       file,
       this.config.get<string>('AWS_BUCKET_NOTES_FILES') || '',
-      'notes-files',
     );
   }
 
-  private async uploadFile(
-    file: Express.Multer.File,
-    bucket: string,
-    folder: string,
-  ) {
-    const key = `${folder}/${Date.now()}-${file.originalname.replace(
-      /\s+/g,
-      '-',
-    )}`;
+  private async uploadFile(file: Express.Multer.File, bucket: string) {
+    const key = `${Date.now()}-${file.originalname.replace(/\s+/g, '-')}`;
 
     try {
       await this.s3Client.send(
