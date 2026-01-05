@@ -13,6 +13,7 @@ import { AuthGuard } from '../auth/guards/auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { JwtPayload } from '../utils/types';
 import { NotificationGateway } from './notification.gateway';
+import { ValidateObjectIdPipe } from '../pipes/validate-object-id.pipe';
 
 @Controller('/api/v1/notifications')
 export class NotificationController {
@@ -40,18 +41,17 @@ export class NotificationController {
   @UseGuards(AuthGuard)
   async markAsRead(
     @CurrentUser() payload: JwtPayload,
-    @Param('id') id: string,
+    @Param('id', ValidateObjectIdPipe) id: string,
   ) {
     const userId = payload.id || '';
     const result = await this.notificationService.markAsRead(userId, id);
-    
-    // Emit real-time event
+
     this.gateway.emitNotificationRead(
       userId,
       result.notification,
       result.unreadCount,
     );
-    
+
     return result.response;
   }
 
@@ -61,14 +61,14 @@ export class NotificationController {
   async markAllAsRead(@CurrentUser() payload: JwtPayload) {
     const userId = payload.id || '';
     const result = await this.notificationService.markAllAsRead(userId);
-    
+
     // Emit real-time event
     this.gateway.emitAllNotificationsRead(
       userId,
       result.updatedCount,
       result.unreadCount,
     );
-    
+
     return result.response;
   }
 
@@ -78,10 +78,10 @@ export class NotificationController {
   async clearAll(@CurrentUser() payload: JwtPayload) {
     const userId = payload.id || '';
     const result = await this.notificationService.clearAll(userId);
-    
+
     // Emit real-time event
     this.gateway.emitNotificationsCleared(userId);
-    
+
     return result;
   }
 
@@ -98,7 +98,7 @@ export class NotificationController {
       message: body.message,
       type: body.type as 'info' | 'success' | 'warning' | 'error',
     });
-    
+
     // Real-time emission is handled by the service
     return result.response;
   }

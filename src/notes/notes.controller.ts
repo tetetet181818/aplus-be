@@ -8,6 +8,7 @@ import {
   Post,
   Put,
   Query,
+  UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -20,6 +21,8 @@ import { AddReviewDto } from './dtos/add-review.dto';
 import { UpdateReviewDto } from './dtos/update-review.dto';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { UpdateNoteDto } from './dtos/update.note.dto';
+import { ValidateObjectIdPipe } from '../pipes/validate-object-id.pipe';
+import { Express } from 'express';
 @Controller('/api/v1/notes')
 export class NotesController {
   constructor(private readonly notesService: NotesService) {}
@@ -75,12 +78,30 @@ export class NotesController {
 
   @Post('/create')
   @UseGuards(AuthGuard)
-  @UseInterceptors(FileFieldsInterceptor([{ name: 'cover', maxCount: 1 }]))
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'note', maxCount: 1 },
+      { name: 'cover', maxCount: 1 },
+    ]),
+  )
   public createNote(
     @Body() body: CreateNoteDto,
     @CurrentUser() payload: JwtPayload,
+    @UploadedFiles()
+    files: {
+      note?: Express.Multer.File[];
+      cover?: Express.Multer.File[];
+    },
   ) {
-    return this.notesService.createNote(body, payload.id || '');
+    const noteFile = files?.note?.[0];
+    const coverFile = files?.cover?.[0];
+
+    return this.notesService.createNote(
+      body,
+      payload.id || '',
+      coverFile,
+      noteFile,
+    );
   }
 
   @Get('/best-sellers-notes')
@@ -91,7 +112,7 @@ export class NotesController {
   @Put('/update/:id')
   @UseGuards(AuthGuard)
   public updateNote(
-    @Param('id') noteId: string,
+    @Param('id', ValidateObjectIdPipe) noteId: string,
     @CurrentUser() payload: JwtPayload,
     @Body() body: UpdateNoteDto,
   ) {
@@ -99,14 +120,14 @@ export class NotesController {
   }
 
   @Get(':id')
-  public getSingleNote(@Param('id') id: string) {
+  public getSingleNote(@Param('id', ValidateObjectIdPipe) id: string) {
     return this.notesService.getSingleNote(id);
   }
 
   @Delete(':id')
   @UseGuards(AuthGuard)
   public deleteNote(
-    @Param('id') noteId: string,
+    @Param('id', ValidateObjectIdPipe) noteId: string,
     @CurrentUser() payload: JwtPayload,
   ) {
     return this.notesService.deleteNote(noteId, payload.id || '');
@@ -115,7 +136,7 @@ export class NotesController {
   @Post('/:id/add-review')
   @UseGuards(AuthGuard)
   public addReview(
-    @Param('id') noteId: string,
+    @Param('id', ValidateObjectIdPipe) noteId: string,
     @Body() body: AddReviewDto,
     @CurrentUser() payload: JwtPayload,
   ) {
@@ -130,8 +151,8 @@ export class NotesController {
   @Put('/:noteId/reviews/:reviewId')
   @UseGuards(AuthGuard)
   public updateReview(
-    @Param('noteId') noteId: string,
-    @Param('reviewId') reviewId: string,
+    @Param('noteId', ValidateObjectIdPipe) noteId: string,
+    @Param('reviewId', ValidateObjectIdPipe) reviewId: string,
     @Body() body: UpdateReviewDto,
     @CurrentUser() payload: JwtPayload,
   ) {
@@ -146,8 +167,8 @@ export class NotesController {
   @Delete('/:noteId/reviews/:reviewId')
   @UseGuards(AuthGuard)
   public deleteReview(
-    @Param('noteId') noteId: string,
-    @Param('reviewId') reviewId: string,
+    @Param('noteId', ValidateObjectIdPipe) noteId: string,
+    @Param('reviewId', ValidateObjectIdPipe) reviewId: string,
     @CurrentUser() payload: JwtPayload,
   ) {
     return this.notesService.deleteReview(noteId, reviewId, payload.id || '');
@@ -156,7 +177,7 @@ export class NotesController {
   @Post('/:id/purchase')
   @UseGuards(AuthGuard)
   public purchaseNote(
-    @Param('id') noteId: string,
+    @Param('id', ValidateObjectIdPipe) noteId: string,
     @CurrentUser() payload: JwtPayload,
     @Body() body: { invoice_id: string; status?: string },
   ) {
@@ -166,7 +187,7 @@ export class NotesController {
   @HttpCode(200)
   @UseGuards(AuthGuard)
   public likeNote(
-    @Param('id') noteId: string,
+    @Param('id', ValidateObjectIdPipe) noteId: string,
     @CurrentUser() payload: JwtPayload,
   ) {
     return this.notesService.likeNote(noteId, payload.id || '');
@@ -176,7 +197,7 @@ export class NotesController {
   @HttpCode(200)
   @UseGuards(AuthGuard)
   public unlikeNote(
-    @Param('id') noteId: string,
+    @Param('id', ValidateObjectIdPipe) noteId: string,
     @CurrentUser() payload: JwtPayload,
   ) {
     return this.notesService.unlikeNote(noteId, payload.id || '');
@@ -185,7 +206,7 @@ export class NotesController {
   @HttpCode(200)
   @UseGuards(AuthGuard)
   public likeOrNot(
-    @Param('id') noteId: string,
+    @Param('id', ValidateObjectIdPipe) noteId: string,
     @CurrentUser() payload: JwtPayload,
   ) {
     return this.notesService.likeOrNot(noteId, payload.id || '');
@@ -193,8 +214,8 @@ export class NotesController {
 
   @Post('/create-payment-link')
   async createPaymentLink(
-    @Query('noteId') noteId: string,
-    @Query('userId') userId: string,
+    @Query('noteId', ValidateObjectIdPipe) noteId: string,
+    @Query('userId', ValidateObjectIdPipe) userId: string,
     @Query('amount') amount: string,
   ) {
     return this.notesService.createPaymentLink({

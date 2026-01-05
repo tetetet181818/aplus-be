@@ -1,4 +1,5 @@
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { S3Client } from '@aws-sdk/client-s3';
+import { Upload } from '@aws-sdk/lib-storage';
 import {
   Injectable,
   InternalServerErrorException,
@@ -20,47 +21,77 @@ export class AwsService {
     });
   }
 
-  async uploadAvatar(file: Express.Multer.File) {
+  async uploadAvatar(
+    file: Express.Multer.File,
+    onProgress?: (progress: number) => void,
+  ) {
     return this.uploadFile(
       file,
       this.config.get<string>('AWS_BUCKET_AVATARS') || '',
+      onProgress,
     );
   }
 
-  async uploadThumbnail(file: Express.Multer.File) {
+  async uploadThumbnail(
+    file: Express.Multer.File,
+    onProgress?: (progress: number) => void,
+  ) {
     return this.uploadFile(
       file,
       this.config.get<string>('AWS_BUCKET_THUMBNAILS') || '',
+      onProgress,
     );
   }
 
-  async uploadCourseVideo(file: Express.Multer.File) {
+  async uploadCourseVideo(
+    file: Express.Multer.File,
+    onProgress?: (progress: number) => void,
+  ) {
     return this.uploadFile(
       file,
       this.config.get<string>('AWS_BUCKET_COURSES') || '',
+      onProgress,
     );
   }
 
-  async uploadNoteFile(file: Express.Multer.File) {
+  async uploadNoteFile(
+    file: Express.Multer.File,
+    onProgress?: (progress: number) => void,
+  ) {
     return this.uploadFile(
       file,
       this.config.get<string>('AWS_BUCKET_NOTES_FILES') || '',
+      onProgress,
     );
   }
 
-  private async uploadFile(file: Express.Multer.File, bucket: string) {
+  private async uploadFile(
+    file: Express.Multer.File,
+    bucket: string,
+    onProgress?: (progress: number) => void,
+  ) {
     const key = `${Date.now()}-${file.originalname.replace(/\s+/g, '-')}`;
 
     try {
-      await this.s3Client.send(
-        new PutObjectCommand({
+      const upload = new Upload({
+        client: this.s3Client,
+        params: {
           Bucket: bucket,
           Key: key,
           Body: file.buffer,
           ContentType: file.mimetype,
           ACL: 'public-read',
-        }),
-      );
+        },
+      });
+
+      upload.on('httpUploadProgress', (progress) => {
+        if (onProgress && progress.loaded && progress.total) {
+          const percent = Math.round((progress.loaded / progress.total) * 100);
+          onProgress(percent);
+        }
+      });
+
+      await upload.done();
 
       return `https://${bucket}.s3.${this.config.get<string>(
         'AWS_REGION',

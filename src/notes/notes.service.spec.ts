@@ -9,10 +9,12 @@ import { Sales } from '../schemas/sales.schema';
 import { Model } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
 import { NotificationService } from '../notification/notification.service';
+import { NotificationGateway } from '../notification/notification.gateway';
 import { SalesService } from '../sales/sales.service';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { ExecutionContext } from '@nestjs/common';
 import type { JwtPayload } from '../utils/types';
+import { AwsService } from '../aws/aws.service';
 
 describe('NotesService', () => {
   let service: NotesService;
@@ -58,6 +60,15 @@ describe('NotesService', () => {
   const mockAuthGuard = {
     canActivate: jest.fn(() => true),
   };
+  const mockAwsService = {
+    uploadThumbnail: jest.fn(),
+    uploadNoteFile: jest.fn(),
+  };
+
+  const mockNotificationGateway = {
+    emitToUser: jest.fn(),
+    emitUploadProgress: jest.fn(),
+  };
 
   const mockJwtPayload: JwtPayload = {
     id: 'user-123',
@@ -93,6 +104,14 @@ describe('NotesService', () => {
           provide: SalesService,
           useValue: mockSalesService,
         },
+        {
+          provide: AwsService,
+          useValue: mockAwsService,
+        },
+        {
+          provide: NotificationGateway,
+          useValue: mockNotificationGateway,
+        },
       ],
     })
       .overrideGuard(AuthGuard)
@@ -111,5 +130,37 @@ describe('NotesService', () => {
 
   it('should be defined', () => {
     expect(service).toBeDefined();
+  });
+
+  describe('createNote', () => {
+    it('should call upload methods if files are provided', async () => {
+      const mockBody = {
+        title: 'Test Note',
+        price: 10,
+        termsAccepted: 'true',
+      } as any;
+      const mockUser = 'user-123';
+      const mockCover = { buffer: Buffer.from('cover') } as any;
+      const mockNoteFile = { buffer: Buffer.from('note') } as any;
+
+      mockAwsService.uploadThumbnail.mockResolvedValue('cover-url');
+      mockAwsService.uploadNoteFile.mockResolvedValue('note-url');
+      mockNoteModel.create.mockResolvedValue({
+        title: 'Test Note',
+        owner_id: 'user-123',
+      });
+
+      await service.createNote(mockBody, mockUser, mockCover, mockNoteFile);
+
+      expect(mockAwsService.uploadThumbnail).toHaveBeenCalledWith(
+        mockCover,
+        expect.any(Function),
+      );
+      expect(mockAwsService.uploadNoteFile).toHaveBeenCalledWith(
+        mockNoteFile,
+        expect.any(Function),
+      );
+      expect(mockNoteModel.create).toHaveBeenCalled();
+    });
   });
 });

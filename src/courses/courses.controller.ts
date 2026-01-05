@@ -19,6 +19,7 @@ import { AuthGuard } from '../auth/guards/auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { JwtPayload } from '../utils/types';
 import type { Express } from 'express';
+import { ValidateObjectIdPipe } from '../pipes/validate-object-id.pipe';
 
 @Controller('/api/v1/courses')
 export class CoursesController {
@@ -42,7 +43,7 @@ export class CoursesController {
   @UseGuards(AuthGuard)
   @UseInterceptors(FileInterceptor('thumbnail'))
   public updateCourse(
-    @Param('id') courseId: string,
+    @Param('id', ValidateObjectIdPipe) courseId: string,
     @CurrentUser() payload: JwtPayload,
     @Body() body: UpdateCourseDto,
     @UploadedFile() thumbnail: Express.Multer.File,
@@ -58,7 +59,7 @@ export class CoursesController {
   @Post('/:courseId/modules')
   @UseGuards(AuthGuard)
   public createModule(
-    @Param('courseId') courseId: string,
+    @Param('courseId', ValidateObjectIdPipe) courseId: string,
     @CurrentUser() payload: JwtPayload,
     @Body() body: CreateModuleDto,
   ) {
@@ -73,8 +74,8 @@ export class CoursesController {
   @UseGuards(AuthGuard)
   @UseInterceptors(FileInterceptor('video'))
   public addLesson(
-    @Param('courseId') courseId: string,
-    @Param('moduleId') moduleId: string,
+    @Param('courseId', ValidateObjectIdPipe) courseId: string,
+    @Param('moduleId', ValidateObjectIdPipe) moduleId: string,
     @CurrentUser() payload: JwtPayload,
     @Body() body: AddLessonDto,
     @UploadedFile() video: Express.Multer.File,

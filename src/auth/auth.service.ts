@@ -26,7 +26,8 @@ import { NotificationService } from '../notification/notification.service';
 import type { Response } from 'express';
 import { COOKIE_NAME, REFRESH_COOKIE_NAME } from '../utils/constants';
 import { AwsService } from '../aws/aws.service';
-import {Express} from "express"
+import { Express } from 'express';
+import { ForgetPasswordDto } from './dtos/forget-password.dto';
 /**
  * Temporary payload stored inside the verification token.
  */
@@ -249,7 +250,8 @@ export class AuthService {
    * - Generate a reset token (valid for 15 minutes).
    * - Send email with reset link.
    */
-  public async forgetPassword(email: string) {
+  public async forgetPassword(body: ForgetPasswordDto) {
+    const { email } = body;
     const user = await this.userModel.findOne({ email });
 
     if (!user) {
@@ -598,7 +600,7 @@ export class AuthService {
     });
   }
 
-  public async logout(res: Response) {
+  public logout(res: Response) {
     this.removeCookies(res);
     return response({
       message: 'تم تسجيل الخروج بنجاح ✅',

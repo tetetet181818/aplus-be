@@ -11,6 +11,7 @@ import {
 import { DashboardService } from './dashboard.service';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { CompleteWithdrawalDto } from './dtos/completeWithdrawal.dto';
+import { ValidateObjectIdPipe } from '../pipes/validate-object-id.pipe';
 
 @Controller('api/v1/dashboard')
 export class DashboardController {
@@ -44,7 +45,7 @@ export class DashboardController {
 
   @Delete('/users/:id')
   @UseGuards(AuthGuard)
-  deleteUser(@Param('id') id: string) {
+  deleteUser(@Param('id', ValidateObjectIdPipe) id: string) {
     return this.dashboardService.deleteUser(id);
   }
 
@@ -109,13 +110,13 @@ export class DashboardController {
 
   @Post('/notes/:id/publish')
   @UseGuards(AuthGuard)
-  MakeNotePublish(@Param('id') id: string) {
+  MakeNotePublish(@Param('id', ValidateObjectIdPipe) id: string) {
     return this.dashboardService.MakeNotePublish(id);
   }
 
   @Post('/notes/:id/unpublish')
   @UseGuards(AuthGuard)
-  MakeNoteUnPublish(@Param('id') id: string) {
+  MakeNoteUnPublish(@Param('id', ValidateObjectIdPipe) id: string) {
     return this.dashboardService.MakeNoteUnPublish(id);
   }
 
@@ -147,7 +148,7 @@ export class DashboardController {
 
   @Get('sales/:id')
   @UseGuards(AuthGuard)
-  getSingleSale(@Param('id') id: string) {
+  getSingleSale(@Param('id', ValidateObjectIdPipe) id: string) {
     return this.dashboardService.getSingleSale(id);
   }
 
@@ -187,26 +188,26 @@ export class DashboardController {
 
   @Get('/withdrawals/:id')
   @UseGuards(AuthGuard)
-  getSingleWithdrawal(@Param('id') id: string) {
+  getSingleWithdrawal(@Param('id', ValidateObjectIdPipe) id: string) {
     return this.dashboardService.getSingleWithdrawal(id);
   }
 
   @Post('/withdrawals/:id/accepted')
   @UseGuards(AuthGuard)
-  acceptedWithdrawal(@Param('id') id: string) {
+  acceptedWithdrawal(@Param('id', ValidateObjectIdPipe) id: string) {
     return this.dashboardService.acceptedWithdrawal(id);
   }
 
   @Post('/withdrawals/:id/rejected')
   @UseGuards(AuthGuard)
-  rejectedWithdrawal(@Param('id') id: string) {
+  rejectedWithdrawal(@Param('id', ValidateObjectIdPipe) id: string) {
     return this.dashboardService.rejectedWithdrawal(id);
   }
 
   @Post('/withdrawals/:id/completed')
   @UseGuards(AuthGuard)
   completedWithdrawal(
-    @Param('id') id: string,
+    @Param('id', ValidateObjectIdPipe) id: string,
     @Body() body: CompleteWithdrawalDto,
   ) {
     return this.dashboardService.completedWithdrawal(id, body);

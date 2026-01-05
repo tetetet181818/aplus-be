@@ -17,6 +17,7 @@ import { UpdateReviewDto } from './dtos/update-review.dto';
 import { User } from '../schemas/users.schema';
 import { ConfigService } from '@nestjs/config';
 import { NotificationService } from '../notification/notification.service';
+import { NotificationGateway } from '../notification/notification.gateway';
 import { SalesService } from '../sales/sales.service';
 import {
   PLATFORM_DECREMENT_PAYMENT_PERCENT,
@@ -25,6 +26,8 @@ import {
 } from '../utils/constants';
 import { Sales } from '../schemas/sales.schema';
 import { UpdateNoteDto } from './dtos/update.note.dto';
+import { AwsService } from '../aws/aws.service';
+import { Express } from 'express';
 
 @Injectable()
 export class NotesService {
@@ -36,11 +39,18 @@ export class NotesService {
     @InjectModel(Sales.name)
     private configService: ConfigService,
     private readonly notificationService: NotificationService,
+    private readonly notificationGateway: NotificationGateway,
     private readonly salesService: SalesService,
+    private readonly awsService: AwsService,
   ) {}
 
   /** Create new note with comprehensive error handling */
-  public async createNote(body: CreateNoteDto, userId: string) {
+  public async createNote(
+    body: CreateNoteDto,
+    userId: string,
+    cover?: Express.Multer.File,
+    note?: Express.Multer.File,
+  ) {
     try {
       if (!userId) {
         throw new BadRequestException(
@@ -48,9 +58,32 @@ export class NotesService {
         );
       }
 
+      let coverUrl = '';
+      let filePath = '';
+
+      if (cover) {
+        coverUrl = await this.awsService.uploadThumbnail(cover, (progress) => {
+          this.notificationGateway.emitUploadProgress(userId, {
+            file: 'cover',
+            progress,
+          });
+        });
+      }
+
+      if (note) {
+        filePath = await this.awsService.uploadNoteFile(note, (progress) => {
+          this.notificationGateway.emitUploadProgress(userId, {
+            file: 'note',
+            progress,
+          });
+        });
+      }
+
       const noteData: Partial<Note> = {
         owner_id: userId,
         ...body,
+        cover_url: coverUrl,
+        file_path: filePath,
         termsAccepted:
           body.termsAccepted === 'true' || body.termsAccepted === '1',
       };
@@ -559,16 +592,7 @@ export class NotesService {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
-      const errorData =
-        error &&
-        typeof error === 'object' &&
-        'res' in error &&
-        error.res &&
-        typeof error.res === 'object' &&
-        'data' in error.res
-          ? error.res.data
-          : undefined;
-      console.error('Moyasar error:', errorData || errorMessage);
+      console.error('Moyasar error:', errorMessage);
       throw error;
     }
   }

@@ -12,6 +12,7 @@ import { CreateSalesDto } from './dtos/create-sales.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { JwtPayload } from '../utils/types';
+import { ValidateObjectIdPipe } from '../pipes/validate-object-id.pipe';
 
 @Controller('/api/v1/sales')
 export class SalesController {
@@ -53,7 +54,7 @@ export class SalesController {
   @UseGuards(AuthGuard)
   getDetailsSalesNote(
     @CurrentUser() payload: JwtPayload,
-    @Param('id') id: string,
+    @Param('id', ValidateObjectIdPipe) id: string,
     @Query('page') page: number,
     @Query('limit') limit: number,
   ) {
@@ -67,7 +68,7 @@ export class SalesController {
 
   @Get('/:id')
   @UseGuards(AuthGuard)
-  public getSingleSale(@Param('id') id: string) {
+  public getSingleSale(@Param('id', ValidateObjectIdPipe) id: string) {
     return this.salesService.getSingleSale(id);
   }
 }

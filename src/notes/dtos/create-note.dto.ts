@@ -34,12 +34,6 @@ export class CreateNoteDto {
   @IsString()
   university?: string;
 
-  @IsString()
-  file_path?: string;
-
-  @IsString()
-  cover_url?: string;
-
   @IsNotEmpty()
   termsAccepted!: string;
 }

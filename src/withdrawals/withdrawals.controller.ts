@@ -15,6 +15,7 @@ import { AuthGuard } from '../auth/guards/auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { JwtPayload } from '../utils/types';
 import { AddAdminNoteDto } from './dtos/add-admin-note.dto';
+import { ValidateObjectIdPipe } from '../pipes/validate-object-id.pipe';
 
 @Controller('/api/v1/withdrawals')
 export class WithdrawalsController {
@@ -43,13 +44,13 @@ export class WithdrawalsController {
 
   @Get('/:id')
   @UseGuards(AuthGuard)
-  public getSingleWithdrawal(@Param('id') id: string) {
+  public getSingleWithdrawal(@Param('id', ValidateObjectIdPipe) id: string) {
     return this.withdrawalsService.getSingleWithdrawal(id);
   }
   @Put('/update/:id')
   @UseGuards(AuthGuard)
   public updateWithdrawal(
-    @Param('id') id: string,
+    @Param('id', ValidateObjectIdPipe) id: string,
     @Body() body: UpdateWithdrawalDto,
   ) {
     return this.withdrawalsService.updateWithdrawal(id, body);
@@ -57,13 +58,16 @@ export class WithdrawalsController {
 
   @Delete('/:id')
   @UseGuards(AuthGuard)
-  public deleteWithdrawal(@Param('id') id: string) {
+  public deleteWithdrawal(@Param('id', ValidateObjectIdPipe) id: string) {
     return this.withdrawalsService.deleteWithdrawal(id);
   }
 
   @Put('/add-admin-note/:id')
   @UseGuards(AuthGuard)
-  public addAdminNote(@Param('id') id: string, @Body() body: AddAdminNoteDto) {
+  public addAdminNote(
+    @Param('id', ValidateObjectIdPipe) id: string,
+    @Body() body: AddAdminNoteDto,
+  ) {
     return this.withdrawalsService.addAdminNote(id, body);
   }
 }

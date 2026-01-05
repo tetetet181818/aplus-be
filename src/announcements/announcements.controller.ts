@@ -13,6 +13,7 @@ import { CreateAnnouncementDto } from './dtos/create-announcement.dto';
 import { RespondToAnnouncementDto } from './dtos/respond-to-announcement.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { JwtPayload } from '../utils/types';
+import { ValidateObjectIdPipe } from '../pipes/validate-object-id.pipe';
 
 interface RequestWithUser extends Request {
   user: JwtPayload;
@@ -25,7 +26,7 @@ export class AnnouncementsController {
 
   @Post(':courseId')
   create(
-    @Param('courseId') courseId: string,
+    @Param('courseId', ValidateObjectIdPipe) courseId: string,
     @Request() req: RequestWithUser,
     @Body() createAnnouncementDto: CreateAnnouncementDto,
   ) {
@@ -37,13 +38,13 @@ export class AnnouncementsController {
   }
 
   @Get('course/:courseId')
-  findAll(@Param('courseId') courseId: string) {
+  findAll(@Param('courseId', ValidateObjectIdPipe) courseId: string) {
     return this.announcementsService.getCourseAnnouncements(courseId);
   }
 
   @Post(':id/respond')
   respond(
-    @Param('id') id: string,
+    @Param('id', ValidateObjectIdPipe) id: string,
     @Request() req: RequestWithUser,
     @Body() respondDto: RespondToAnnouncementDto,
   ) {
@@ -55,7 +56,7 @@ export class AnnouncementsController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string, @Request() req: RequestWithUser) {
+  remove(@Param('id', ValidateObjectIdPipe) id: string, @Request() req: RequestWithUser) {
     return this.announcementsService.deleteAnnouncement(id, req.user.id!);
   }
 }

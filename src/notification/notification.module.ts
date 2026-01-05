@@ -28,6 +28,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       },
     }),
   ],
-  exports: [NotificationService],
+  exports: [NotificationService, NotificationGateway],
 })
 export class NotificationModule {}

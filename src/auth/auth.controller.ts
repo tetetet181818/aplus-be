@@ -29,7 +29,8 @@ import { GoogleAuthGuard } from '../guards/google-auth.guard';
 import { RefreshTokenGuard } from './guards/refresh-token.guard';
 import { ConfigService } from '@nestjs/config';
 import type { Response, Request } from 'express';
-import type { Express } from "express"
+import type { Express } from 'express';
+import { ValidateObjectIdPipe } from '../pipes/validate-object-id.pipe';
 @Controller('/api/v1/auth')
 export class AuthController {
   constructor(
@@ -89,7 +90,7 @@ export class AuthController {
 
   @Post('/forget-password')
   public forgetPassword(@Body() body: ForgetPasswordDto) {
-    return this.authService.forgetPassword(body.email as string);
+    return this.authService.forgetPassword(body);
   }
 
   @Post('/reset-password')
@@ -145,7 +146,7 @@ export class AuthController {
   }
 
   @Get('/:id')
-  public getUserById(@Param('id') id: string) {
+  public getUserById(@Param('id', ValidateObjectIdPipe) id: string) {
     return this.authService.getUserById(id);
   }
 

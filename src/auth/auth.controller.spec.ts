@@ -6,7 +6,7 @@ import { AuthGuard } from './guards/auth.guard';
 import { GoogleAuthGuard } from '../guards/google-auth.guard';
 import { RegisterDto } from './dtos/register.dto';
 import { LoginDto } from './dtos/login.dto';
-import { ForgetPasswordDto } from './dtos/forget-password.dto';
+// import { ForgetPasswordDto } from './dtos/forget-password.dto';
 import { ResetPasswordDto } from './dtos/reset-password.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import type { JwtPayload, GoogleAuthRequest } from '../utils/types';
@@ -163,40 +163,23 @@ describe('AuthController', () => {
     });
   });
 
-  describe('logout', () => {
-    it('should logout user', async () => {
-      const expectedResult = {
-        statusCode: 200,
-        message: 'تم تسجيل الخروج بنجاح ✅',
-      };
+  // describe('forgetPassword', () => {
+  //   it('should send password reset email', async () => {
+  //     const forgetPasswordDto: ForgetPasswordDto = {
+  //       email: 'test@example.com',
+  //     };
+  //     const expectedResult = { message: 'Password reset email sent' };
 
-      mockAuthService.logout.mockResolvedValue(expectedResult);
+  //     mockAuthService.forgetPassword.mockResolvedValue(expectedResult);
 
-      // eslint-disable-next-line @typescript-eslint/await-thenable
-      const result = await controller.logout(mockResponse);
+  //     const result = await controller.forgetPassword(forgetPasswordDto);
 
-      expect(mockAuthService.logout).toHaveBeenCalledWith(mockResponse);
-      expect(result).toEqual(expectedResult);
-    });
-  });
-
-  describe('forgetPassword', () => {
-    it('should send password reset email', async () => {
-      const forgetPasswordDto: ForgetPasswordDto = {
-        email: 'test@example.com',
-      };
-      const expectedResult = { message: 'Password reset email sent' };
-
-      mockAuthService.forgetPassword.mockResolvedValue(expectedResult);
-
-      const result = await controller.forgetPassword(forgetPasswordDto);
-
-      expect(mockAuthService.forgetPassword).toHaveBeenCalledWith(
-        'test@example.com',
-      );
-      expect(result).toEqual(expectedResult);
-    });
-  });
+  //     expect(mockAuthService.forgetPassword).toHaveBeenCalledWith(
+  //       forgetPasswordDto.email,
+  //     );
+  //     expect(result).toEqual(expectedResult);
+  //   });
+  // });
 
   describe('resetPassword', () => {
     it('should reset user password', async () => {

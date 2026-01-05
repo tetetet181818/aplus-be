@@ -10,12 +10,14 @@ import { UserSchema } from '../schemas/users.schema';
 import { NotificationModule } from '../notification/notification.module';
 import { SalesModule } from '../sales/sales.module';
 import { SalesSchema } from '../schemas/sales.schema';
+import { AwsModule } from '../aws/aws.module';
 
 @Module({
   controllers: [NotesController],
   providers: [NotesService],
   imports: [
     ConfigModule,
+    AwsModule,
     MongooseModule.forFeature([
       { name: 'Note', schema: NoteSchema },
       { name: 'User', schema: UserSchema },

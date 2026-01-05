@@ -46,7 +46,11 @@ export class NotificationGateway {
   }
 
   /** Emit all notifications marked as read */
-  emitAllNotificationsRead(userId: string, updatedCount: number, unreadCount: number) {
+  emitAllNotificationsRead(
+    userId: string,
+    updatedCount: number,
+    unreadCount: number,
+  ) {
     this.server.to(userId).emit('all-notifications-read', {
       updatedCount,
       unreadCount,
@@ -68,5 +72,9 @@ export class NotificationGateway {
   /** Legacy method for backward compatibility */
   emitToUser(userId: string, payload: any) {
     this.server.to(userId).emit('notification', payload);
+  }
+
+  emitUploadProgress(userId: string, payload: any) {
+    this.server.to(userId).emit('upload-progress', payload);
   }
 }
