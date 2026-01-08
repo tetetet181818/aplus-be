@@ -8,7 +8,7 @@ export class MailService {
   public transporter;
 
   constructor(private readonly config: ConfigService) {
-    const token = this.config.get<string>('SMTP_PASSWORD');
+    const token = this.config.get<string>('mail.smtpPassword');
 
     // Create transporter using Mailtrap API (not SMTP)
     this.transporter = Nodemailer.createTransport(

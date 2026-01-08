@@ -13,10 +13,10 @@ export class AwsService {
   private readonly s3Client: S3Client;
   constructor(private readonly config: ConfigService) {
     this.s3Client = new S3Client({
-      region: config.get<string>('AWS_REGION') || '',
+      region: config.get<string>('aws.region') || '',
       credentials: {
-        accessKeyId: config.get<string>('AWS_ACCESS_KEY_ID') || '',
-        secretAccessKey: config.get<string>('AWS_SECRET_ACCESS_KEY') || '',
+        accessKeyId: config.get<string>('aws.accessKeyId') || '',
+        secretAccessKey: config.get<string>('aws.secretAccessKey') || '',
       },
     });
   }
@@ -27,7 +27,7 @@ export class AwsService {
   ) {
     return this.uploadFile(
       file,
-      this.config.get<string>('AWS_BUCKET_AVATARS') || '',
+      this.config.get<string>('aws.buckets.avatars') || '',
       onProgress,
     );
   }
@@ -38,7 +38,7 @@ export class AwsService {
   ) {
     return this.uploadFile(
       file,
-      this.config.get<string>('AWS_BUCKET_THUMBNAILS') || '',
+      this.config.get<string>('aws.buckets.thumbnails') || '',
       onProgress,
     );
   }
@@ -49,7 +49,7 @@ export class AwsService {
   ) {
     return this.uploadFile(
       file,
-      this.config.get<string>('AWS_BUCKET_COURSES') || '',
+      this.config.get<string>('aws.buckets.courses') || '',
       onProgress,
     );
   }
@@ -60,7 +60,7 @@ export class AwsService {
   ) {
     return this.uploadFile(
       file,
-      this.config.get<string>('AWS_BUCKET_NOTES_FILES') || '',
+      this.config.get<string>('aws.buckets.notes') || '',
       onProgress,
     );
   }
@@ -94,7 +94,7 @@ export class AwsService {
       await upload.done();
 
       return `https://${bucket}.s3.${this.config.get<string>(
-        'AWS_REGION',
+        'aws.region',
       )}.amazonaws.com/${key}`;
     } catch (error) {
       const errorMessage =

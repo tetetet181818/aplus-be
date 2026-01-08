@@ -130,11 +130,9 @@ export class AuthService {
     try {
       await this.mailService.sendRegistrationEmail({
         email,
-        confirmationURL: `${
-          this.config.get<string>('NODE_ENV') === 'development'
-            ? this.config.get<string>('FRONTEND_SERVER_DEVELOPMENT')
-            : this.config.get<string>('FRONTEND_SERVER_PRODUCTION')
-        }/verify?token=${token}`,
+        confirmationURL: `${this.config.get<string>(
+          'app.frontendUrl',
+        )}/verify?token=${token}`,
       });
     } catch (error) {
       console.error(`❌ Failed to send email: ${error}`);
@@ -198,8 +196,15 @@ export class AuthService {
         data: newUser,
         statusCode: 201,
       });
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (err) {
+    } catch (err: unknown) {
+      if (
+        err &&
+        typeof err === 'object' &&
+        'status' in err &&
+        err.status === 409
+      ) {
+        throw err;
+      }
       throw new BadRequestException('رابط التفعيل غير صالح أو منتهي ⏳');
     }
   }
@@ -267,12 +272,9 @@ export class AuthService {
     try {
       await this.mailService.sendForgetPasswordEmail({
         email,
-        resetURL: `${
-          this.config.get<string>('NODE_ENV') === 'development'
-            ? this.config.get<string>('FRONTEND_SERVER_DEVELOPMENT')
-            : this.config.get<string>('FRONTEND_SERVER_PRODUCTION')
-          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        }/reset-password?userId=${user?._id}&resetPasswordToken=${user.resetPasswordToken}`,
+        resetURL: `${this.config.get<string>(
+          'app.frontendUrl',
+        )}/reset-password?userId=${user?._id.toString()}&resetPasswordToken=${user.resetPasswordToken}`,
       });
     } catch (error) {
       throw new InternalServerErrorException(error);
@@ -293,7 +295,7 @@ export class AuthService {
     try {
       const user = await this.userModel.findOne({ _id: userId });
       if (!user) {
-        throw new NotFoundException('الحساب غير موجود 🔍');
+        throw new BadRequestException('الحساب غير موجود 🔍');
       }
 
       if (
@@ -321,8 +323,13 @@ export class AuthService {
         message: 'تم تغيير كلمة المرور بنجاح، يمكنك تسجيل الدخول الآن 🔐',
         statusCode: 200,
       });
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (err) {
+    } catch (err: any) {
+      if (
+        err instanceof BadRequestException ||
+        err instanceof NotFoundException
+      ) {
+        throw err;
+      }
       throw new BadRequestException('رابط إعادة التعيين غير صالح أو منتهي ⏳');
     }
   }
@@ -478,7 +485,7 @@ export class AuthService {
     await this.updateRefreshToken(user._id.toString(), tokens.refreshToken);
     this.setCookies(res, tokens.accessToken, tokens.refreshToken);
 
-    res.redirect(`${this.config.get<string>('FRONTEND_SERVER_PRODUCTION')}/`);
+    res.redirect(`${this.config.get<string>('app.frontendUrl')}/`);
     return response({
       message: 'User authenticated successfully',
       data: user,
@@ -643,8 +650,8 @@ export class AuthService {
           fullName,
         },
         {
-          secret: this.config.get<string>('JWT_SECRET'),
-          expiresIn: this.config.get('JWT_EXPIRES_IN') || '1d',
+          secret: this.config.get<string>('auth.jwtSecret'),
+          expiresIn: this.config.get('auth.jwtExpiresIn') || '1d',
         },
       ),
       this.jwtService.signAsync(
@@ -655,8 +662,8 @@ export class AuthService {
           fullName,
         },
         {
-          secret: this.config.get<string>('JWT_REFRESH_SECRET'),
-          expiresIn: this.config.get('JWT_REFRESH_EXPIRES_IN') || '7d',
+          secret: this.config.get<string>('auth.jwtRefreshSecret'),
+          expiresIn: this.config.get('auth.jwtRefreshExpiresIn') || '7d',
         },
       ),
     ]);
@@ -700,14 +707,14 @@ export class AuthService {
   }
   private generateJwtToken(payload: JwtPayload): Promise<string> {
     return this.jwtService.signAsync(payload, {
-      secret: this.config.get<string>('JWT_SECRET'),
-      expiresIn: this.config.get('JWT_EXPIRES_IN') || '1d',
+      secret: this.config.get<string>('auth.jwtSecret'),
+      expiresIn: this.config.get('auth.jwtExpiresIn') || '1d',
     });
   }
 
   private verifyToken(token: string): Promise<JwtPayload> {
     return this.jwtService.verifyAsync(token, {
-      secret: this.config.get<string>('JWT_SECRET'),
+      secret: this.config.get<string>('auth.jwtSecret'),
     });
   }
 

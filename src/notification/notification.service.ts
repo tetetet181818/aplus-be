@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Notification } from '../schemas/notification.schema';
@@ -45,12 +50,12 @@ export class NotificationService {
     if (!notification) {
       throw new NotFoundException('Failed to create notification');
     }
-    
+
     // Emit real-time notification to the user
     if (this.gateway && notification) {
       this.gateway.emitNewNotification(userId, notification.toObject());
     }
-    
+
     return {
       notification,
       response: response({
@@ -69,12 +74,12 @@ export class NotificationService {
       .find({ userId })
       .sort({ createdAt: -1 })
       .exec();
-    
+
     const unreadCount = await this.notificationModel.countDocuments({
       userId,
       read: false,
     });
-    
+
     return response({
       data: {
         notifications: allNotifications,
@@ -109,12 +114,12 @@ export class NotificationService {
       { new: true },
     );
     if (!notification) throw new NotFoundException('Notification not found');
-    
+
     const unreadCount = await this.notificationModel.countDocuments({
       userId,
       read: false,
     });
-    
+
     return {
       notification,
       unreadCount,
@@ -134,12 +139,12 @@ export class NotificationService {
       { userId, read: false },
       { read: true },
     );
-    
+
     const unreadCount = await this.notificationModel.countDocuments({
       userId,
       read: false,
     });
-    
+
     return {
       updatedCount: result.modifiedCount,
       unreadCount,

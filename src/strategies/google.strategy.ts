@@ -1,9 +1,8 @@
+import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Profile, Strategy, VerifyCallback } from 'passport-google-oauth20';
 import { AuthService } from '../auth/auth.service';
-import googleOauthConfig from '../config/google-oauth.config';
-import type { ConfigType } from '@nestjs/config';
 
 export interface GoogleUser {
   email: string;
@@ -17,14 +16,13 @@ export interface GoogleUser {
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy) {
   constructor(
-    @Inject(googleOauthConfig.KEY)
-    private googleConfig: ConfigType<typeof googleOauthConfig>,
+    private readonly config: ConfigService,
     private readonly authService: AuthService,
   ) {
     super({
-      clientID: googleConfig.clientID as string,
-      clientSecret: googleConfig.clientSecret as string,
-      callbackURL: googleConfig.callbackURL as string,
+      clientID: config.get<string>('google.clientId') || '',
+      clientSecret: config.get<string>('google.clientSecret') || '',
+      callbackURL: config.get<string>('google.callbackUrl') || '',
       scope: ['email', 'profile'],
     });
   }

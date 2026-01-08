@@ -12,6 +12,14 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiBody,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { NotesService } from './notes.service';
 import { CreateNoteDto } from './dtos/create-note.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
@@ -23,19 +31,27 @@ import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { UpdateNoteDto } from './dtos/update.note.dto';
 import { ValidateObjectIdPipe } from '../pipes/validate-object-id.pipe';
 import { Express } from 'express';
+
+@ApiTags('Notes')
 @Controller('/api/v1/notes')
 export class NotesController {
   constructor(private readonly notesService: NotesService) {}
 
-  /**
-   * Get all notes with pagination and sorting
-   * @param page - Current page number
-   * @param limit - Number of items per page
-   * @param sortBy - Field to sort by (e.g., price, year, title, createdAt)
-   * @param sortOrder - Sort order: asc or desc
-   */
-
   @Get('/')
+  @ApiOperation({
+    summary: 'Search and list all notes with pagination and filters',
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'sortBy', required: false, type: String })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'] })
+  @ApiQuery({ name: 'title', required: false, type: String })
+  @ApiQuery({ name: 'university', required: false, type: String })
+  @ApiQuery({ name: 'collage', required: false, type: String })
+  @ApiQuery({ name: 'year', required: false, type: String })
+  @ApiQuery({ name: 'maxDownloads', required: false, type: Boolean })
+  @ApiQuery({ name: 'minPrice', required: false, type: Boolean })
+  @ApiQuery({ name: 'maxPrice', required: false, type: Boolean })
   getAllNotes(
     @Query('page') page: number,
     @Query('limit') limit: number,
@@ -66,24 +82,50 @@ export class NotesController {
 
   @Get('/my-notes')
   @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get notes created by the current user' })
   public getUserNotes(@CurrentUser() payload: JwtPayload) {
     return this.notesService.getUserNotes(payload.id || '');
   }
 
   @Get('/likes-notes')
   @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get notes liked by the current user' })
   public getLikesNotes(@CurrentUser() payload: JwtPayload) {
     return this.notesService.getLikesNotes(payload.id || '');
   }
 
   @Post('/create')
   @UseGuards(AuthGuard)
+  @ApiBearerAuth()
   @UseInterceptors(
     FileFieldsInterceptor([
       { name: 'note', maxCount: 1 },
       { name: 'cover', maxCount: 1 },
     ]),
   )
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Upload a new note with a cover image' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        note: { type: 'string', format: 'binary' },
+        cover: { type: 'string', format: 'binary' },
+        title: { type: 'string' },
+        description: { type: 'string' },
+        price: { type: 'number' },
+        subject: { type: 'string' },
+        pagesNumber: { type: 'number' },
+        year: { type: 'number' },
+        college: { type: 'string' },
+        university: { type: 'string' },
+        termsAccepted: { type: 'string' },
+      },
+      required: ['note', 'title', 'price', 'termsAccepted'],
+    },
+  })
   public createNote(
     @Body() body: CreateNoteDto,
     @CurrentUser() payload: JwtPayload,
@@ -105,12 +147,15 @@ export class NotesController {
   }
 
   @Get('/best-sellers-notes')
+  @ApiOperation({ summary: 'Get a list of best-selling notes' })
   public async bestSellersNotes() {
     return this.notesService.bestSellersNotes();
   }
 
   @Put('/update/:id')
   @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update note details' })
   public updateNote(
     @Param('id', ValidateObjectIdPipe) noteId: string,
     @CurrentUser() payload: JwtPayload,
@@ -120,12 +165,15 @@ export class NotesController {
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Get a single note by ID' })
   public getSingleNote(@Param('id', ValidateObjectIdPipe) id: string) {
     return this.notesService.getSingleNote(id);
   }
 
   @Delete(':id')
   @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete a note' })
   public deleteNote(
     @Param('id', ValidateObjectIdPipe) noteId: string,
     @CurrentUser() payload: JwtPayload,
@@ -135,6 +183,8 @@ export class NotesController {
 
   @Post('/:id/add-review')
   @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Add a review to a note' })
   public addReview(
     @Param('id', ValidateObjectIdPipe) noteId: string,
     @Body() body: AddReviewDto,
@@ -150,6 +200,8 @@ export class NotesController {
 
   @Put('/:noteId/reviews/:reviewId')
   @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update an existing review' })
   public updateReview(
     @Param('noteId', ValidateObjectIdPipe) noteId: string,
     @Param('reviewId', ValidateObjectIdPipe) reviewId: string,
@@ -166,6 +218,8 @@ export class NotesController {
 
   @Delete('/:noteId/reviews/:reviewId')
   @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete a review' })
   public deleteReview(
     @Param('noteId', ValidateObjectIdPipe) noteId: string,
     @Param('reviewId', ValidateObjectIdPipe) reviewId: string,
@@ -176,6 +230,18 @@ export class NotesController {
 
   @Post('/:id/purchase')
   @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Purchase a note' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        invoice_id: { type: 'string' },
+        status: { type: 'string' },
+      },
+      required: ['invoice_id'],
+    },
+  })
   public purchaseNote(
     @Param('id', ValidateObjectIdPipe) noteId: string,
     @CurrentUser() payload: JwtPayload,
@@ -183,9 +249,12 @@ export class NotesController {
   ) {
     return this.notesService.purchaseNote(noteId, payload.id || '', body);
   }
+
   @Post('/:id/like')
   @HttpCode(200)
   @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Like a note' })
   public likeNote(
     @Param('id', ValidateObjectIdPipe) noteId: string,
     @CurrentUser() payload: JwtPayload,
@@ -196,15 +265,20 @@ export class NotesController {
   @Post('/:id/unlike')
   @HttpCode(200)
   @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Unlike a note' })
   public unlikeNote(
     @Param('id', ValidateObjectIdPipe) noteId: string,
     @CurrentUser() payload: JwtPayload,
   ) {
     return this.notesService.unlikeNote(noteId, payload.id || '');
   }
+
   @Get('/:id/toggle-like')
   @HttpCode(200)
   @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Toggle like status of a note or check if liked' })
   public likeOrNot(
     @Param('id', ValidateObjectIdPipe) noteId: string,
     @CurrentUser() payload: JwtPayload,
@@ -213,6 +287,10 @@ export class NotesController {
   }
 
   @Post('/create-payment-link')
+  @ApiOperation({ summary: 'Create a payment link for a note purchase' })
+  @ApiQuery({ name: 'noteId', type: String })
+  @ApiQuery({ name: 'userId', type: String })
+  @ApiQuery({ name: 'amount', type: String })
   async createPaymentLink(
     @Query('noteId', ValidateObjectIdPipe) noteId: string,
     @Query('userId', ValidateObjectIdPipe) userId: string,

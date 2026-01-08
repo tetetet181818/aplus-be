@@ -6,7 +6,7 @@ import { AuthGuard } from './guards/auth.guard';
 import { GoogleAuthGuard } from '../guards/google-auth.guard';
 import { RegisterDto } from './dtos/register.dto';
 import { LoginDto } from './dtos/login.dto';
-// import { ForgetPasswordDto } from './dtos/forget-password.dto';
+import { ForgetPasswordDto } from './dtos/forget-password.dto';
 import { ResetPasswordDto } from './dtos/reset-password.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import type { JwtPayload, GoogleAuthRequest } from '../utils/types';
@@ -29,6 +29,8 @@ describe('AuthController', () => {
     getAllUsers: jest.fn(),
     getUserById: jest.fn(),
     googleLogin: jest.fn(),
+    refreshTokens: jest.fn(),
+    updateAvatar: jest.fn(),
   };
 
   const mockConfigService = {
@@ -149,37 +151,74 @@ describe('AuthController', () => {
     });
   });
 
-  describe('verify', () => {
-    it('should verify user with token', async () => {
-      const token = 'verification-token';
-      const expectedResult = { message: 'Email verified successfully' };
+  describe('refresh', () => {
+    it('should refresh tokens and return result', async () => {
+      const payload: JwtPayload = {
+        id: '60d0fe4f5311236168a109ca',
+        email: 'test@example.com',
+      };
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const req = {
+        user: { ...payload, refreshToken: 'old-refresh-token' },
+      } as any;
+      const expectedResult = {
+        message: 'تم تحديث الجلسة بنجاح ✅',
+        statusCode: 200,
+      };
 
-      mockAuthService.verify.mockResolvedValue(expectedResult);
+      mockAuthService.refreshTokens.mockResolvedValue(expectedResult);
 
-      const result = await controller.verify(token, mockResponse);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      const result = await controller.refresh(payload, req, mockResponse);
 
-      expect(mockAuthService.verify).toHaveBeenCalledWith(token, mockResponse);
+      expect(mockAuthService.refreshTokens).toHaveBeenCalledWith(
+        '60d0fe4f5311236168a109ca',
+        'old-refresh-token',
+        mockResponse,
+      );
       expect(result).toEqual(expectedResult);
     });
   });
 
-  // describe('forgetPassword', () => {
-  //   it('should send password reset email', async () => {
-  //     const forgetPasswordDto: ForgetPasswordDto = {
-  //       email: 'test@example.com',
-  //     };
-  //     const expectedResult = { message: 'Password reset email sent' };
+  describe('forgetPassword', () => {
+    it('should send password reset email', async () => {
+      const forgetPasswordDto: ForgetPasswordDto = {
+        email: 'test@example.com',
+      };
+      const expectedResult = { message: 'Password reset email sent' };
 
-  //     mockAuthService.forgetPassword.mockResolvedValue(expectedResult);
+      mockAuthService.forgetPassword.mockResolvedValue(expectedResult);
 
-  //     const result = await controller.forgetPassword(forgetPasswordDto);
+      const result = await controller.forgetPassword(forgetPasswordDto);
 
-  //     expect(mockAuthService.forgetPassword).toHaveBeenCalledWith(
-  //       forgetPasswordDto.email,
-  //     );
-  //     expect(result).toEqual(expectedResult);
-  //   });
-  // });
+      expect(mockAuthService.forgetPassword).toHaveBeenCalledWith(
+        forgetPasswordDto,
+      );
+      expect(result).toEqual(expectedResult);
+    });
+  });
+
+  describe('updateAvatar', () => {
+    it('should update user avatar', async () => {
+      const payload: JwtPayload = {
+        id: 'user-123',
+        email: 'test@example.com',
+        role: 'student',
+      };
+      const mockFile = { buffer: Buffer.from('') } as Express.Multer.File;
+      const expectedResult = { message: 'Avatar updated' };
+
+      mockAuthService.updateAvatar.mockResolvedValue(expectedResult);
+
+      const result = await controller.updateAvatar(payload, mockFile);
+
+      expect(mockAuthService.updateAvatar).toHaveBeenCalledWith(
+        'user-123',
+        mockFile,
+      );
+      expect(result).toEqual(expectedResult);
+    });
+  });
 
   describe('resetPassword', () => {
     it('should reset user password', async () => {

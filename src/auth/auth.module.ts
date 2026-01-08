@@ -9,7 +9,6 @@ import { MailModule } from '../mail/mail.module';
 import { NoteSchema } from '../schemas/note.schema';
 import { NotificationModule } from '../notification/notification.module';
 import { GoogleStrategy } from '../strategies/google.strategy';
-import googleOauthConfig from '../config/google-oauth.config';
 
 import { RefreshTokenStrategy } from '../strategies/refresh-token.strategy';
 import { AwsModule } from '../aws/aws.module';
@@ -28,14 +27,13 @@ import { AwsModule } from '../aws/aws.module';
       useFactory: (configService: ConfigService) => {
         return {
           global: true,
-          secret: configService.get<string>('JWT_SECRET'),
+          secret: configService.get<string>('auth.jwtSecret'),
           signOptions: {
-            expiresIn: configService.get('JWT_EXPIRES_IN') || '1d',
+            expiresIn: configService.get('auth.jwtExpiresIn'),
           },
         };
       },
     }),
-    ConfigModule.forFeature(googleOauthConfig),
     MailModule,
     NotificationModule,
     AwsModule,

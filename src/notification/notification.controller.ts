@@ -8,6 +8,13 @@ import {
   Body,
   UseGuards,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiParam,
+  ApiBody,
+} from '@nestjs/swagger';
 import { NotificationService } from './notification.service';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -15,30 +22,31 @@ import type { JwtPayload } from '../utils/types';
 import { NotificationGateway } from './notification.gateway';
 import { ValidateObjectIdPipe } from '../pipes/validate-object-id.pipe';
 
+@ApiTags('Notifications')
 @Controller('/api/v1/notifications')
+@UseGuards(AuthGuard)
+@ApiBearerAuth()
 export class NotificationController {
   constructor(
     private readonly notificationService: NotificationService,
     private readonly gateway: NotificationGateway,
   ) {}
 
-  /** Get all notifications */
   @Get('/')
-  @UseGuards(AuthGuard)
+  @ApiOperation({ summary: 'Get all notifications for the current user' })
   async getAll(@CurrentUser() payload: JwtPayload) {
     return this.notificationService.getAll(payload.id || '');
   }
 
-  /** Get unread count */
   @Get('/unread-count')
-  @UseGuards(AuthGuard)
+  @ApiOperation({ summary: 'Get the count of unread notifications' })
   async getUnreadCount(@CurrentUser() payload: JwtPayload) {
     return this.notificationService.getUnreadCount(payload.id || '');
   }
 
-  /** Mark single as read */
   @Patch(':id/read')
-  @UseGuards(AuthGuard)
+  @ApiOperation({ summary: 'Mark a specific notification as read' })
+  @ApiParam({ name: 'id', description: 'ID of the notification' })
   async markAsRead(
     @CurrentUser() payload: JwtPayload,
     @Param('id', ValidateObjectIdPipe) id: string,
@@ -55,9 +63,10 @@ export class NotificationController {
     return result.response;
   }
 
-  /** Mark all as read */
   @Patch('/read-all')
-  @UseGuards(AuthGuard)
+  @ApiOperation({
+    summary: 'Mark all notifications as read for the current user',
+  })
   async markAllAsRead(@CurrentUser() payload: JwtPayload) {
     const userId = payload.id || '';
     const result = await this.notificationService.markAllAsRead(userId);
@@ -72,9 +81,8 @@ export class NotificationController {
     return result.response;
   }
 
-  /** Clear all notifications */
   @Delete('/clear-all')
-  @UseGuards(AuthGuard)
+  @ApiOperation({ summary: 'Delete all notifications for the current user' })
   async clearAll(@CurrentUser() payload: JwtPayload) {
     const userId = payload.id || '';
     const result = await this.notificationService.clearAll(userId);
@@ -86,7 +94,18 @@ export class NotificationController {
   }
 
   @Post()
-  @UseGuards(AuthGuard)
+  @ApiOperation({ summary: 'Create a new notification (Testing/Trigger)' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string' },
+        message: { type: 'string' },
+        type: { type: 'string', enum: ['info', 'success', 'warning', 'error'] },
+      },
+      required: ['title', 'message'],
+    },
+  })
   async create(
     @CurrentUser() payload: JwtPayload,
     @Body() body: { title: string; message: string; type?: string },
