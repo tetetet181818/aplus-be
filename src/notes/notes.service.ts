@@ -28,6 +28,7 @@ import { Sales } from '../schemas/sales.schema';
 import { UpdateNoteDto } from './dtos/update.note.dto';
 import { AwsService } from '../aws/aws.service';
 import { Express } from 'express';
+import { CreatePaymentLinkDto } from './dtos/create-payment-link.dto';
 
 @Injectable()
 export class NotesService {
@@ -551,15 +552,8 @@ export class NotesService {
     });
   }
 
-  public async createPaymentLink({
-    noteId,
-    userId,
-    amount,
-  }: {
-    noteId: string;
-    userId: string;
-    amount: string;
-  }) {
+  public async createPaymentLink(body: CreatePaymentLinkDto) {
+    const { noteId, userId, amount } = body;
     const domain =
       process.env.NODE_ENV === 'production'
         ? process.env.FRONTEND_SERVER_PRODUCTION
@@ -568,7 +562,7 @@ export class NotesService {
       const res = await axios.post(
         'https://api.moyasar.com/v1/invoices',
         {
-          amount: Math.round(parseFloat(amount) * 100),
+          amount: Number(amount) * 100,
           currency: 'SAR',
           description: `شراء ملخص رقم ${noteId}`,
           callback_url: `${domain}/api/payment/callback`,

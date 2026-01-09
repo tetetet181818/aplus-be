@@ -31,6 +31,7 @@ import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { UpdateNoteDto } from './dtos/update.note.dto';
 import { ValidateObjectIdPipe } from '../pipes/validate-object-id.pipe';
 import { Express } from 'express';
+import { CreatePaymentLinkDto } from './dtos/create-payment-link.dto';
 
 @ApiTags('Notes')
 @Controller('/api/v1/notes')
@@ -288,18 +289,8 @@ export class NotesController {
 
   @Post('/create-payment-link')
   @ApiOperation({ summary: 'Create a payment link for a note purchase' })
-  @ApiQuery({ name: 'noteId', type: String })
-  @ApiQuery({ name: 'userId', type: String })
-  @ApiQuery({ name: 'amount', type: String })
-  async createPaymentLink(
-    @Query('noteId', ValidateObjectIdPipe) noteId: string,
-    @Query('userId', ValidateObjectIdPipe) userId: string,
-    @Query('amount') amount: string,
-  ) {
-    return this.notesService.createPaymentLink({
-      noteId,
-      userId,
-      amount,
-    });
+  @ApiBody({ type: CreatePaymentLinkDto })
+  async createPaymentLink(@Body() body: CreatePaymentLinkDto) {
+    return this.notesService.createPaymentLink(body);
   }
 }

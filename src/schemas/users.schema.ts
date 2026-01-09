@@ -10,9 +10,7 @@ export class User {
 
   @Prop({
     type: String,
-    default: function (this: User) {
-      return `https://api.dicebear.com/6.x/initials/svg?seed=${this.fullName}&backgroundColor=2563eb&backgroundType=solid`;
-    },
+    default: `https://aplus-avatars.s3.eu-north-1.amazonaws.com/default_avatar.png`,
     required: false,
   })
   avatar!: string;
