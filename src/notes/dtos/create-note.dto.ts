@@ -22,6 +22,14 @@ export class CreateNoteDto {
   @IsString()
   description?: string;
 
+  @IsNotEmpty({ message: 'الحد الادنى مطلوب' })
+  @IsString()
+  sampleFrom!: string;
+
+  @IsNotEmpty({ message: 'الحد الاقصى مطلوب' })
+  @IsString()
+  sampleTo!: string;
+
   @ApiProperty({ example: 45, description: 'Price of the notes' })
   @IsNotEmpty({ message: '💰 السعر مطلوب' })
   price!: number;

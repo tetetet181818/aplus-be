@@ -44,6 +44,12 @@ export class Note {
   @Prop({ type: String, required: true })
   description!: string;
 
+  @Prop({ type: String, required: false })
+  sampleFrom!: string;
+
+  @Prop({ type: String, required: false })
+  sampleTo!: string;
+
   @Prop({ type: Number, required: true, default: 0 })
   price!: number;
 
