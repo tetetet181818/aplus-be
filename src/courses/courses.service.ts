@@ -6,7 +6,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { FilterQuery, Model, Types } from 'mongoose';
 import {
   Course,
   CourseDocument,
@@ -22,6 +22,7 @@ import response from '../utils/response.pattern';
 import { AwsService } from '../aws/aws.service';
 import { CoursesGateway } from './courses.gateway';
 import type { Express } from 'express';
+import { GetCoursesQueryDto } from './dtos/get-courses-query.dto';
 
 @Injectable()
 export class CoursesService {
@@ -44,6 +45,86 @@ export class CoursesService {
         }
       });
     }
+  }
+
+  public async getAllCourses(query: GetCoursesQueryDto) {
+    const {
+      page = 1,
+      limit = 10,
+      title,
+      minPrice,
+      maxPrice,
+      minRating,
+      maxRating,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+    } = query;
+
+    const filter: FilterQuery<CourseDocument> = {};
+
+    if (title) {
+      // Escape special regex characters to prevent crashes
+      const safeTitle = title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      filter.title = { $regex: new RegExp(safeTitle, 'i') };
+    }
+
+    if (minPrice !== undefined || maxPrice !== undefined) {
+      const priceFilter: { $gte?: number; $lte?: number } = {};
+      if (minPrice !== undefined) priceFilter.$gte = minPrice;
+      if (maxPrice !== undefined) priceFilter.$lte = maxPrice;
+      filter.price = priceFilter;
+    }
+
+    if (minRating !== undefined || maxRating !== undefined) {
+      const ratingFilter: { $gte?: number; $lte?: number } = {};
+      if (minRating !== undefined) ratingFilter.$gte = minRating;
+      if (maxRating !== undefined) ratingFilter.$lte = maxRating;
+      filter.rating = ratingFilter;
+    }
+
+    const skip = (page - 1) * limit;
+
+    const sort: any = { [sortBy]: sortOrder === 'asc' ? 1 : -1 };
+
+    const [courses, total] = await Promise.all([
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      this.courseModel.find(filter).sort(sort).skip(skip).limit(limit).exec(),
+      this.courseModel.countDocuments(filter).exec(),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+
+    return response({
+      data: {
+        courses: courses,
+        pagination: {
+          total,
+          page,
+          limit,
+          totalPages,
+          hasNextPage,
+          hasPrevPage,
+        },
+      },
+      message: 'تم جلب الدورات بنجاح',
+      statusCode: 200,
+    });
+  }
+
+  public async getCourse(courseId: string) {
+    const course = await this.courseModel.findById(courseId).exec();
+
+    if (!course) {
+      throw new NotFoundException('الدورة غير موجودة');
+    }
+
+    return response({
+      data: course,
+      message: 'تم جلب الدورة بنجاح',
+      statusCode: 200,
+    });
   }
 
   public async createCourse(
@@ -96,6 +177,8 @@ export class CoursesService {
         ownerName: payload.fullName,
         ownerEmail: payload.email,
         ownerPhone: body.ownerPhone,
+        category: body.category,
+        rating: 0,
         modules: [],
       };
 

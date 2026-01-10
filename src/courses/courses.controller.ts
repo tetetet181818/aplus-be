@@ -2,9 +2,11 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Get,
   Param,
   Post,
   Put,
+  Query,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -16,6 +18,7 @@ import {
   ApiBearerAuth,
   ApiConsumes,
   ApiBody,
+  ApiResponse,
 } from '@nestjs/swagger';
 import { CoursesService } from './courses.service';
 import { CreateCourseDto } from './dtos/create-course.dto';
@@ -27,11 +30,91 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { JwtPayload } from '../utils/types';
 import type { Express } from 'express';
 import { ValidateObjectIdPipe } from '../pipes/validate-object-id.pipe';
+import { GetCoursesQueryDto } from './dtos/get-courses-query.dto';
 
 @ApiTags('Courses')
 @Controller('/api/v1/courses')
 export class CoursesController {
   constructor(private readonly coursesService: CoursesService) {}
+
+  @Get('/')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'الحصول على جميع الدورات مع الترقيم والتصفية',
+    description: `
+      احصل على قائمة الدورات مع إمكانية:
+      - الترقيم (Pagination)
+      - البحث بالعنوان
+      - التصفية حسب السعر (الحد الأدنى والأقصى)
+      - التصفية حسب التقييم (الحد الأدنى والأقصى)
+      - الترتيب حسب حقول مختلفة
+    `,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'تم جلب الدورات بنجاح',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        message: { type: 'string', example: 'تم جلب الدورات بنجاح' },
+        statusCode: { type: 'number', example: 200 },
+        data: {
+          type: 'object',
+          properties: {
+            courses: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  _id: { type: 'string', example: '507f1f77bcf86cd799439011' },
+                  title: { type: 'string', example: 'دورة البرمجة المتقدمة' },
+                  description: { type: 'string', example: 'وصف الدورة' },
+                  price: { type: 'number', example: 299.99 },
+                  rating: { type: 'number', example: 4.5 },
+                  createdAt: {
+                    type: 'string',
+                    example: '2024-01-01T00:00:00.000Z',
+                  },
+                },
+              },
+            },
+            pagination: {
+              type: 'object',
+              properties: {
+                total: { type: 'number', example: 50 },
+                page: { type: 'number', example: 1 },
+                limit: { type: 'number', example: 10 },
+                totalPages: { type: 'number', example: 5 },
+                hasNextPage: { type: 'boolean', example: true },
+                hasPrevPage: { type: 'boolean', example: false },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'غير مصرح',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'بيانات غير صحيحة',
+  })
+  public getAllCourses(@Query() query: GetCoursesQueryDto) {
+    return this.coursesService.getAllCourses(query);
+  }
+
+  @Get('/:id')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get a course by ID' })
+  public getCourse(@Param('id', ValidateObjectIdPipe) courseId: string) {
+    return this.coursesService.getCourse(courseId);
+  }
 
   @Post('/create')
   @UseGuards(AuthGuard)

@@ -35,6 +35,9 @@ export class Course {
   @Prop({ type: String, required: true })
   ownerId!: string;
 
+  @Prop({ type: String, required: false })
+  category!: string;
+
   @Prop({ type: String, required: true })
   ownerName!: string;
 
@@ -43,6 +46,9 @@ export class Course {
 
   @Prop({ type: String, required: true })
   ownerPhone!: string;
+
+  @Prop({ type: Number, default: 0 })
+  rating!: number;
 
   @Prop({
     type: [

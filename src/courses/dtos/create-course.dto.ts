@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, Min } from 'class-validator';
+import { IsNotEmpty, IsString } from 'class-validator';
 
 export class CreateCourseDto {
   @IsString()
@@ -8,6 +8,10 @@ export class CreateCourseDto {
   @IsString()
   @IsNotEmpty({ message: 'الوصف مطلوب' })
   description!: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'القسم مطلوب' })
+  category!: string;
 
   @IsString()
   @IsNotEmpty({ message: 'السعر مطلوب' })
